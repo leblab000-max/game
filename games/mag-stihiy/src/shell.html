@@ -1,0 +1,115 @@
+<title>Маг стихий</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<style>
+:root{--ink:#fff8e8;--bg:#1a1236;--panel:#241a4a;--line:#3d2f78;--gold:#ffd23a;--gold2:#ff9f1a;--red:#ff4a5a;--green:#5aef7a;--sub:#b8a8e8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#140e2a;font-family:Rubik,system-ui,sans-serif;color:var(--ink);touch-action:none}
+.app{position:fixed;inset:0}
+#stage{position:absolute;inset:0}
+#stage canvas{display:block}
+#touch{position:absolute;inset:0}
+#vign{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,5,30,.55) 100%)}
+#hurt{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(255,30,60,.55) 100%);transition:opacity .35s}
+#hurt.on{opacity:1;transition:none}
+#joy{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.22);pointer-events:none;display:none}
+#knob{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:rgba(255,255,255,.4);box-shadow:0 0 16px rgba(255,255,255,.4)}
+[hidden]{display:none!important}
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none;padding:env(safe-area-inset-top) 10px 0}
+.xpbar{position:relative;height:16px;margin-top:8px;border-radius:9px;background:rgba(20,10,45,.75);border:2px solid #0e0820;overflow:hidden}
+.xpbar i{position:absolute;inset:0;width:0;background:linear-gradient(180deg,#8ae0ff,#3a8cff);box-shadow:0 0 12px #3a8cff;transition:width .15s}
+.xpbar b{position:absolute;inset:0;font-size:11px;font-weight:800;text-align:center;line-height:13px;text-shadow:0 1px 2px #000}
+.hrow{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.chip{font-weight:800;font-size:15px;background:rgba(20,10,45,.7);padding:4px 10px;border-radius:12px;min-width:64px;text-shadow:0 2px 0 #000}
+#hTime{font-size:24px;font-weight:800;text-shadow:0 2px 0 #000,0 0 12px rgba(0,0,0,.6);letter-spacing:1px}
+#hPause{pointer-events:auto;width:40px;height:40px;border-radius:12px;border:2px solid #0e0820;background:var(--panel);color:#fff;font:800 16px Rubik;cursor:pointer}
+#slots{position:absolute;left:10px;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;gap:5px;flex-wrap:wrap;max-width:60%}
+.slot{width:34px;height:38px;border-radius:9px;background:rgba(20,10,45,.75);border:2px solid var(--c,#555);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;line-height:1}
+.slot small{font-size:9px;font-weight:800;color:var(--c);margin-top:2px}
+.slot.f{font-size:11px;letter-spacing:-2px;border-color:var(--gold);box-shadow:0 0 10px rgba(255,210,58,.6)}
+#boss{margin:8px auto 0;max-width:420px}
+#boss b{display:block;text-align:center;font-weight:800;font-size:13px;color:#ffb0c0;text-shadow:0 2px 0 #000}
+#boss .bar{height:10px;border-radius:6px;background:rgba(20,10,45,.8);border:2px solid #0e0820;overflow:hidden}
+#boss .bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff2a5a,#ff7a3a)}
+#banner{position:absolute;left:0;right:0;top:28%;text-align:center;font-weight:800;font-size:26px;color:var(--gold);text-shadow:0 3px 0 #3a1a00,0 0 20px rgba(255,160,0,.6);opacity:0;transform:scale(.6);transition:opacity .3s,transform .3s;pointer-events:none;padding:0 16px}
+#banner.on{opacity:1;transform:scale(1)}
+/* экраны и окна */
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;background:linear-gradient(180deg,rgba(26,18,54,.55),rgba(26,18,54,.92));overflow-y:auto}
+.modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,5,30,.72);backdrop-filter:blur(2px)}
+.box{width:100%;max-width:440px;background:var(--panel);border:3px solid #0e0820;border-radius:22px;padding:18px 16px;box-shadow:0 10px 0 #0e0820,0 0 40px rgba(120,80,255,.25);text-align:center;max-height:100%;overflow-y:auto}
+h1{margin:0 0 4px;font-size:22px;font-weight:800}
+.title{font-size:44px;font-weight:800;line-height:1;margin:0;background:linear-gradient(180deg,#fff2b0,#ffb020 60%,#ff7a1a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #3a1a00) drop-shadow(0 0 24px rgba(255,160,40,.45));text-align:center}
+.sub{color:var(--sub);font-size:14px;margin:8px 0 16px;text-align:center}
+.btn{display:block;width:100%;margin:8px 0;padding:14px;border:3px solid #0e0820;border-radius:16px;background:#4a3a9a;color:#fff;font:800 18px Rubik;box-shadow:0 5px 0 #0e0820;cursor:pointer;position:relative}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #0e0820}
+.btn.gold{background:linear-gradient(180deg,#ffd84a,#ff9f1a);color:#3a1a00}
+.btn.green{background:linear-gradient(180deg,#6af08a,#28b84a);color:#08300f}
+.btn small{display:block;font-size:12px;font-weight:500;opacity:.8}
+.btn:disabled{opacity:.45}
+.wrap{width:100%;max-width:420px}
+.picks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 4px}
+.pick{border:3px solid #0e0820;border-radius:14px;background:var(--panel);padding:10px 2px 8px;cursor:pointer;color:#fff;font:700 12px Rubik}
+.pick span{display:block;font-size:26px;margin-bottom:4px}
+.pick.on{border-color:var(--c);box-shadow:0 0 0 2px var(--c),0 0 18px var(--c)}
+.stats{display:flex;justify-content:center;gap:14px;font-size:13px;color:var(--sub);margin:10px 0 0;flex-wrap:wrap}
+.stats b{color:#fff}
+.coins{position:absolute;top:calc(12px + env(safe-area-inset-top));right:14px;font-weight:800;font-size:18px;background:rgba(20,10,45,.75);padding:6px 12px;border-radius:14px;border:2px solid #0e0820}
+/* карты уровня */
+.cards{display:flex;flex-direction:column;gap:10px;margin:12px 0 6px}
+.card{display:flex;align-items:center;gap:12px;text-align:left;padding:12px;border-radius:16px;border:3px solid var(--c);background:linear-gradient(90deg,color-mix(in srgb,var(--c) 22%,#241a4a),#241a4a 70%);cursor:pointer;color:#fff;font-family:Rubik;box-shadow:0 4px 0 #0e0820;animation:cin .35s both}
+.card:nth-child(2){animation-delay:.07s}.card:nth-child(3){animation-delay:.14s}
+.card:active{transform:scale(.98)}
+.card .ic{font-size:32px;width:48px;text-align:center;flex:none}
+.card b{display:block;font-size:17px}
+.card em{font-style:normal;font-size:11px;font-weight:800;color:var(--c);text-transform:uppercase;letter-spacing:.5px}
+.card p{margin:3px 0 0;font-size:13px;color:#ddd4ff;line-height:1.3}
+.card.fuse .ic{font-size:22px;letter-spacing:-4px}
+.card.fuse{--c:#ffd23a;background:linear-gradient(90deg,#5a3a00,#3a2470);box-shadow:0 4px 0 #0e0820,0 0 24px rgba(255,210,58,.5)}
+@keyframes cin{from{opacity:0;transform:translateY(20px) scale(.95)}}
+.shop{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.srow{display:flex;align-items:center;gap:10px;background:var(--panel);border:3px solid #0e0820;border-radius:14px;padding:10px;text-align:left}
+.srow .ic{font-size:26px}
+.srow b{display:block;font-size:15px}.srow small{color:var(--sub);font-size:12px}
+.pips{display:flex;gap:3px;margin-top:4px}.pips i{width:12px;height:6px;border-radius:3px;background:#0e0820}.pips i.on{background:var(--gold)}
+.srow button{margin-left:auto;flex:none;padding:8px 10px;border:3px solid #0e0820;border-radius:12px;background:linear-gradient(180deg,#ffd84a,#ff9f1a);font:800 14px Rubik;color:#3a1a00;box-shadow:0 3px 0 #0e0820}
+.srow button:disabled{background:#3d2f78;color:#998}
+.build{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}
+.big{font-size:40px;font-weight:800;color:var(--gold);text-shadow:0 3px 0 #3a1a00;margin:4px 0}
+.rows{font-size:15px;color:var(--sub);line-height:1.8}.rows b{color:#fff}
+#toast{position:absolute;left:50%;bottom:calc(70px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0e0820;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;z-index:9;max-width:90%;text-align:center}
+</style>
+<div class="app">
+  <div id="stage"></div>
+  <div id="vign"></div><div id="hurt"></div>
+  <div id="touch"></div>
+  <div id="joy"><div id="knob"></div></div>
+  <div id="hud" hidden>
+    <div class="xpbar"><i id="hXp"></i><b id="hLvl">Ур. 1</b></div>
+    <div class="hrow"><span class="chip" id="hKills">💀 0</span><span id="hTime">00:00</span><span style="display:flex;gap:6px;align-items:center"><span class="chip" id="hCoins">🪙 0</span><button id="hPause">II</button></span></div>
+    <div id="boss" hidden><b id="bossName"></b><div class="bar"><i id="bossHp"></i></div></div>
+    <div id="slots"></div>
+  </div>
+  <div id="banner"></div>
+  <div id="menu" class="scr">
+    <div class="coins" id="mCoins">🪙 0</div>
+    <div class="wrap">
+      <p class="title">МАГ<br>СТИХИЙ</p>
+      <p class="sub">Продержись 10 минут против орды.<br>Смешивай стихии — рождай новые заклинания.</p>
+      <div style="font-size:13px;color:var(--sub);text-align:center">Стихия на старте</div>
+      <div class="picks" id="mPicks"></div>
+      <button class="btn gold" id="mPlay">▶ В бой</button>
+      <button class="btn" id="mShop">✨ Прокачка</button>
+      <button class="btn" id="mSound">🔊 Звук</button>
+      <div class="stats" id="mStats"></div>
+    </div>
+  </div>
+  <div id="shopScr" class="scr" hidden>
+    <div class="coins" id="sCoins">🪙 0</div>
+    <div class="wrap"><h1 style="text-align:center">Прокачка мага</h1><p class="sub" style="margin:4px 0">Действует во всех забегах</p><div class="shop" id="shopList"></div><button class="btn" id="sBack">← Назад</button></div>
+  </div>
+  <div id="lvlup" class="modal" hidden><div class="box"><h1 id="luTitle">Новый уровень!</h1><div class="cards" id="luCards"></div><button class="btn" id="luReroll" style="padding:10px;font-size:15px">🎲 Перебросить</button></div></div>
+  <div id="pause" class="modal" hidden><div class="box"><h1>Пауза</h1><div class="build" id="pBuild"></div><button class="btn gold" id="pGo">▶ Продолжить</button><button class="btn" id="pSound">🔊 Звук</button><button class="btn" id="pQuit">Сдаться</button></div></div>
+  <div id="revive" class="modal" hidden><div class="box"><h1>Ты пал!</h1><p class="sub">Орда почти победила. Но магия ещё теплится…</p><button class="btn green" id="rAd">▶ Воскреснуть<small>за просмотр ролика</small></button><button class="btn" id="rNo">Завершить забег</button></div></div>
+  <div id="end" class="modal" hidden><div class="box" id="endBox"></div></div>
+  <div id="toast" hidden></div>
+</div>

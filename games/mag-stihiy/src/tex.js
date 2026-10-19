@@ -37,9 +37,10 @@ function makeTextures(sc) {
   tex(sc, "tile", 256, 256, 0, 0, x => {
     x.fillStyle = "#2f5a3a"; x.fillRect(0, 0, 256, 256);
     let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-    for (let i = 0; i < 26; i++) { x.fillStyle = rnd() < .5 ? "rgba(70,120,70,.35)" : "rgba(25,55,35,.35)"; x.beginPath(); x.ellipse(rnd() * 256, rnd() * 256, 10 + rnd() * 30, 6 + rnd() * 16, rnd() * 3, 0, 7); x.fill(); }
-    for (let i = 0; i < 40; i++) { const px = rnd() * 256, py = rnd() * 256; x.strokeStyle = rnd() < .5 ? "#4f8a52" : "#3d7445"; x.lineWidth = 1.6; x.beginPath(); x.moveTo(px - 3, py); x.lineTo(px - 4, py - 6); x.moveTo(px, py); x.lineTo(px, py - 8); x.moveTo(px + 3, py); x.lineTo(px + 4, py - 6); x.stroke(); }
-    for (let i = 0; i < 6; i++) { const px = rnd() * 256, py = rnd() * 256; x.fillStyle = ["#f5e36a", "#f0a0c8", "#ffffff"][i % 3]; for (let k = 0; k < 5; k++) { x.beginPath(); x.arc(px + Math.cos(k * 1.26) * 2.6, py + Math.sin(k * 1.26) * 2.6, 1.8, 0, 7); x.fill(); } x.fillStyle = "#e09030"; x.beginPath(); x.arc(px, py, 1.4, 0, 7); x.fill(); }
+    const wrap = (px, py, f) => { for (const ox of [-256, 0, 256]) for (const oy of [-256, 0, 256]) f(px + ox, py + oy); };
+    for (let i = 0; i < 26; i++) { const st = rnd() < .5 ? "rgba(70,120,70,.35)" : "rgba(25,55,35,.35)", px = rnd() * 256, py = rnd() * 256, rx = 10 + rnd() * 30, ry = 6 + rnd() * 16, a = rnd() * 3; wrap(px, py, (X, Y) => { x.fillStyle = st; x.beginPath(); x.ellipse(X, Y, rx, ry, a, 0, 7); x.fill(); }); }
+    for (let i = 0; i < 40; i++) { const px = 8 + rnd() * 240, py = 10 + rnd() * 240; x.strokeStyle = rnd() < .5 ? "#4f8a52" : "#3d7445"; x.lineWidth = 1.6; x.beginPath(); x.moveTo(px - 3, py); x.lineTo(px - 4, py - 6); x.moveTo(px, py); x.lineTo(px, py - 8); x.moveTo(px + 3, py); x.lineTo(px + 4, py - 6); x.stroke(); }
+    for (let i = 0; i < 6; i++) { const px = 8 + rnd() * 240, py = 8 + rnd() * 240; x.fillStyle = ["#f5e36a", "#f0a0c8", "#ffffff"][i % 3]; for (let k = 0; k < 5; k++) { x.beginPath(); x.arc(px + Math.cos(k * 1.26) * 2.6, py + Math.sin(k * 1.26) * 2.6, 1.8, 0, 7); x.fill(); } x.fillStyle = "#e09030"; x.beginPath(); x.arc(px, py, 1.4, 0, 7); x.fill(); }
   });
   // маг
   tex(sc, "mage", 40, 56, 20, 36, x => {
