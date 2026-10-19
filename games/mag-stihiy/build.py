@@ -16,6 +16,8 @@ js = open(f'{ROOT}/shared/zzfx.js').read() + '\n' + js
 body = '\n<script>\n' + phaser + '\n</script>\n<script>\n"use strict";\n' + js + '\n</script>\n'
 full = '<!doctype html>\n<html lang="ru">\n<head>\n<meta charset="utf-8">\n' + h.replace('<div class="app">', '</head>\n<body>\n<div class="app">', 1) + body + '</body>\n</html>\n'
 os.makedirs(f'{H}/dist', exist_ok=True)
+art = re.sub(r'<meta name="viewport"[^>]*>\n', '', h) + body
+open(f'{H}/dist/artifact.html', 'w').write(art)
 open(f'{H}/dist/index.html', 'w').write(full)
 with zipfile.ZipFile(f'{H}/dist/mag-stihiy-yandex.zip', 'w', zipfile.ZIP_DEFLATED) as z: z.writestr('index.html', full)
 print(len(full) // 1024, 'KB', os.path.getsize(f'{H}/dist/mag-stihiy-yandex.zip') // 1024, 'KB zip')
