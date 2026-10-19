@@ -1,0 +1,82 @@
+<title>Блоки-самоцветы</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+:root { --ink: #ffffff; --muted: #b8c4ff; --orange: #ff9a2a; --orangeD: #d8701a; --green: #4cc85a; --greenD: #2f9a3e; color-scheme: dark; }
+html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { background: radial-gradient(circle at 50% 0%, #5a4ae0, #2a2a8a 55%, #1a1a5a); color: var(--ink); font-family: Rubik, "Segoe UI", Roboto, Arial, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
+#bg { position: fixed; inset: 0; pointer-events: none; }
+.scr { position: relative; display: flex; flex-direction: column; height: 100%; max-width: 480px; margin: 0 auto; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); gap: 8px; }
+.pill { background: rgba(255,255,255,0.14); border-radius: 20px; padding: 6px 12px; font-weight: 700; }
+.ibtn { background: rgba(255,255,255,0.14); border: 0; color: #fff; border-radius: 12px; min-width: 42px; height: 42px; font-size: 20px; cursor: pointer; font-family: inherit; }
+.btn { border: 0; border-bottom: 5px solid #c4d4ea; border-radius: 16px; padding: 12px 16px; font: inherit; font-weight: 800; font-size: 18px; cursor: pointer; display: flex; flex-direction: column; align-items: center; color: #24304a; background: #eef4fc; }
+.btn small { font-weight: 500; font-size: 13px; opacity: 0.9; }
+.btn.orange { background: linear-gradient(#ffb04a, var(--orange)); border-bottom-color: var(--orangeD); color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+.btn.green { background: linear-gradient(#6ad878, var(--green)); border-bottom-color: var(--greenD); color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+.btn.purple { background: linear-gradient(#b07aff, #8a4ae0); border-bottom-color: #5a2aa0; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+.btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 3px; }
+.btn:disabled { opacity: 0.6; cursor: default; }
+/* меню */
+#menuScr { justify-content: center; gap: 14px; }
+.mtop { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: center; }
+.logo { text-align: center; margin-bottom: 10px; }
+.logo .row { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.logo .row i { width: 34px; height: 34px; border-radius: 9px; display: block; box-shadow: inset 0 -5px 0 rgba(0,0,0,0.25), inset 0 3px 0 rgba(255,255,255,0.35); animation: bob 2s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-6px); } }
+.logo h1 { margin: 0; font-size: 44px; line-height: 1; color: #ffd02a; text-shadow: 0 4px 0 #1b2550, 0 0 20px rgba(255,208,42,0.4); }
+.logo p { margin: 6px 0 0; color: var(--muted); }
+.mbtns { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
+.mbtns .btn { font-size: 22px; padding: 16px; }
+.mrow { display: flex; gap: 10px; justify-content: center; }
+/* карта */
+.mapTop { display: flex; align-items: center; gap: 8px; } .mapTop h2 { flex: 1; margin: 0; text-align: center; font-size: 22px; }
+#map { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; align-items: center; gap: 14px; padding: 20px 0 30px; touch-action: pan-y; }
+.node { transform: translateX(var(--off)); width: 74px; height: 74px; border-radius: 50%; border: 0; border-bottom: 6px solid #b86e00; background: radial-gradient(circle at 40% 30%, #ffe08a, #ffb020); color: #5a3000; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; flex: none; }
+.node b { font-size: 24px; line-height: 1; } .node .nk { font-size: 14px; } .node .st { position: absolute; bottom: -22px; color: #ffd02a; font-size: 15px; letter-spacing: 1px; text-shadow: 0 1px 0 #1b2550; white-space: nowrap; }
+.node.locked { background: #3a4580; border-bottom-color: #222a5a; color: #8a96d0; } .node.cur { box-shadow: 0 0 0 5px rgba(255,255,255,0.8), 0 0 30px #ffd02a; animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { transform: translateX(var(--off)) scale(1.08); } }
+/* игра */
+.gtop { display: flex; align-items: center; gap: 8px; }
+#goal { flex: 1; text-align: center; line-height: 1.1; }
+#goal .sc { font-size: 40px; font-weight: 800; text-shadow: 0 3px 0 rgba(0,0,0,0.25); } #goal .sub { font-size: 14px; color: #ffd02a; font-weight: 700; } #goal .dim { color: rgba(255,255,255,0.25); }
+#goal .lv { font-size: 13px; color: var(--muted); } #goal .sc2 { font-size: 30px; font-weight: 800; }
+.wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+#cv { display: block; touch-action: none; }
+.boosts { display: flex; justify-content: center; gap: 14px; }
+.boosts button { position: relative; width: 64px; height: 56px; border-radius: 16px; border: 0; border-bottom: 5px solid #5a2aa0; background: linear-gradient(#b07aff, #8a4ae0); font-size: 26px; cursor: pointer; }
+.boosts .bc { position: absolute; top: -6px; right: -6px; background: #ff4d6d; color: #fff; font-size: 13px; font-weight: 800; border-radius: 10px; padding: 1px 7px; font-family: Rubik, sans-serif; }
+.tip { text-align: center; color: #fff; background: rgba(0,0,0,0.25); border-radius: 12px; padding: 6px 10px; font-size: 14px; }
+/* окна */
+.modal { position: fixed; inset: 0; background: rgba(10,10,40,0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.mbox { background: #fff; color: #24304a; border-radius: 22px; padding: 20px; width: 100%; max-width: 360px; text-align: center; display: flex; flex-direction: column; gap: 10px; max-height: 100%; overflow: auto; animation: pop .25s ease-out; }
+@keyframes pop { from { transform: scale(0.85); opacity: 0; } }
+.mbox h1 { margin: 0; font-size: 24px; } .mbox .big { font-size: 56px; font-weight: 800; color: #5a4ae0; }
+.mbox .hint { color: #6a7898; } .btns { display: flex; flex-direction: column; gap: 8px; } .rew { font-size: 26px; font-weight: 800; color: #d8701a; }
+.stars { font-size: 56px; letter-spacing: 6px; } .stars span { color: #d6dcea; display: inline-block; } .stars span.on { color: #ffc020; animation: star .4s ease-out both; text-shadow: 0 3px 0 #b86e00; }
+@keyframes star { from { transform: scale(2) rotate(-30deg); opacity: 0; } }
+.rrow { display: flex; gap: 8px; padding: 8px; border-bottom: 1px solid #e4ecf6; text-align: left; } .rrow.me { background: #fff8d0; border-radius: 8px; } .rrow .nm { flex: 1; }
+#toast { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); background: #24304a; color: #fff; border-radius: 12px; padding: 8px 14px; z-index: 20; pointer-events: none; text-align: center; max-width: 92vw; }
+</style>
+<canvas id="bg"></canvas>
+<div class="scr" id="menuScr">
+  <div class="mtop"><span class="pill">🪙 <span id="mCoins">0</span></span><button class="ibtn" id="mTop" aria-label="Рейтинг">🏆</button></div>
+  <div class="logo"><div class="row"><i style="background:#ff4d6d"></i><i style="background:#ffb020;animation-delay:.15s"></i><i style="background:#2fd27a;animation-delay:.3s"></i><i style="background:#3d8bff;animation-delay:.45s"></i><i style="background:#a35cff;animation-delay:.6s"></i></div><h1>БЛОКИ-<br>САМОЦВЕТЫ</h1><p>Собирай ряды — забирай очки</p></div>
+  <div class="mbtns"><button class="btn orange" id="mAdv"></button><button class="btn purple" id="mClassic"></button><button class="btn green" id="mGift"></button></div>
+  <div class="mrow"><button class="ibtn" id="mSound" style="padding:0 14px;font-size:16px"></button></div>
+</div>
+<div class="scr" id="mapScr" hidden>
+  <div class="mapTop"><button class="ibtn" id="mapBack" aria-label="Назад">←</button><h2>Приключение</h2><span class="pill">🪙 <span id="mapCoins">0</span></span></div>
+  <div id="map"></div>
+</div>
+<div class="scr" id="gameScr" hidden>
+  <div class="gtop"><button class="ibtn" id="back" aria-label="Назад">←</button><div id="goal"></div><span class="pill">🪙 <span id="gCoins">0</span></span></div>
+  <div class="tip" id="tutG" hidden></div>
+  <div class="tip" id="toolHint" hidden></div>
+  <div class="wrap"><canvas id="cv"></canvas></div>
+  <div class="boosts"><button data-boost="hammer" id="b_hammer" aria-label="Молот"></button><button data-boost="bomb" id="b_bomb" aria-label="Бомба"></button><button data-boost="refresh" id="b_refresh" aria-label="Новые фигуры"></button></div>
+</div>
+<div class="modal" id="over" hidden><div class="mbox" id="overBody"></div></div>
+<div class="modal" id="shop" hidden><div class="mbox" id="shopBody"></div></div>
+<div class="modal" id="topWin" hidden><div class="mbox"><h1>Рейтинг</h1><div id="topList"></div><button class="btn" data-act="closetop">Закрыть</button></div></div>
+<div id="toast" hidden></div>

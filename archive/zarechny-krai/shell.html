@@ -1,0 +1,165 @@
+<title>Заречный край</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=PT+Sans:wght@400;700&family=PT+Mono&display=swap">
+<style>
+/* Карта края слева (на телефоне — сверху), деревянная панель управления справа (снизу). */
+:root {
+  --wood: #2a1e16; --wood-2: #372820; --brass: #b88a4a; --ink: #f1e6d2; --muted: #b6a690; --news: #f2c879;
+  --gain: #6fdc6f; --loss: #ff7a6b; --page: #1b140f;
+  --f-display: "Alegreya SC", "Palatino Linotype", Georgia, serif; --f-body: "PT Sans", "Segoe UI", Roboto, Arial, sans-serif; --f-num: "PT Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+body { background: var(--page); color: var(--ink); font-family: var(--f-body); font-size: 14px; overflow: hidden; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "map hud" "map panel"; gap: 10px; height: 100%; padding: 10px; box-sizing: border-box; }
+.hud { grid-area: hud; background: var(--wood); border: 2px solid var(--brass); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hudrow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.hudrow .grow { flex: 1; }
+h1 { font-family: var(--f-display); font-size: 22px; margin: 0; color: var(--brass); width: 100%; }
+.money { font-family: var(--f-num); font-size: 15px; } .money b { color: #fff; font-weight: 400; } .money i { font-style: normal; }
+.date { color: var(--muted); font-size: 13px; }
+.goal { font-size: 13px; cursor: pointer; } .goal b { color: var(--brass); }
+.mapcol { grid-area: map; min-width: 0; min-height: 0; }
+.mapwrap { position: relative; width: 100%; height: 100%; border: 2px solid var(--brass); border-radius: 8px; overflow: hidden; background: #14100c; }
+#view { display: block; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+.zoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.zoom button { width: 40px; height: 40px; font-size: 20px; padding: 0; background: rgba(42,30,22,0.9); border-color: var(--brass); }
+.tutbar { position: absolute; left: 8px; right: 56px; bottom: 8px; background: rgba(42,30,22,0.95); border: 2px solid var(--news); border-radius: 8px; padding: 8px 10px; font-size: 14px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.35; }
+.tutbar span { flex: 1; } .tutbar button { min-height: 28px; padding: 2px 8px; }
+.seg2 { display: flex; flex-wrap: wrap; gap: 4px; } .seg2 button { font-size: 13px; padding: 4px 8px; }
+.seg3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.ic { width: 1.15em; height: 1.15em; fill: currentColor; vertical-align: -0.22em; margin-right: 3px; flex: none; }
+.ic.gold { fill: #f2d060; } .ic.big { width: 22px; height: 22px; fill: var(--news); vertical-align: -6px; margin-right: 6px; }
+a { color: var(--news); }
+.toast { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); background: rgba(42,30,22,0.95); border: 1px solid var(--brass); border-radius: 6px; padding: 6px 12px; color: var(--news); white-space: nowrap; }
+.panel { grid-area: panel; min-height: 0; overflow-y: auto; background: var(--wood); border: 2px solid var(--brass); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+button, select { font: inherit; color: var(--ink); background: var(--wood-2); border: 1px solid #5b4433; border-radius: 4px; padding: 5px 10px; min-height: 34px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--brass); }
+button:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+button:disabled { opacity: 0.45; cursor: default; }
+button.on { background: var(--brass); color: var(--wood); border-color: var(--brass); }
+.next { background: #6a8a3a; border-color: #9ac060; font-weight: 700; color: #fff; padding: 6px 14px; min-height: 40px; }
+.next.pulse:not(:disabled) { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 4px rgba(154,192,96,0.35); } }
+.wide { width: 100%; }
+.go { background: #6a8a3a; border-color: #9ac060; color: #fff; font-weight: 700; min-height: 42px; }
+.tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px 4px; font-size: 12px; min-height: 48px; }
+.tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+section.tabsec { display: flex; flex-direction: column; gap: 8px; }
+h2 { font-family: var(--f-display); font-size: 18px; margin: 4px 0 0; color: var(--brass); font-weight: 700; }
+.hint { color: var(--muted); font-size: 13px; }
+.label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+.up { color: var(--gain); } .down { color: var(--loss); }
+.card { display: flex; flex-direction: column; gap: 7px; }
+.ctitle { font-family: var(--f-display); font-size: 20px; color: var(--brass); }
+.tname { font-weight: 700; }
+.yrow, .chips, .stock { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.yl { font-size: 12px; padding: 1px 7px; border-radius: 999px; border: 1px solid #5b4433; }
+.yl.f { border-color: #8a7a2a; color: #f2d870; } .yl.w { border-color: #6a4a2a; color: #d8a868; } .yl.s { border-color: #6a6a6a; color: #c8c8c8; } .yl.m { border-color: #8a6a1a; color: #ffd860; }
+.stock span b { font-family: var(--f-num); font-weight: 400; color: #fff; } .stock i { font-style: normal; font-size: 12px; }
+.site { background: #33261b; border: 1px solid #5b4433; border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+.stars { color: #ffd94d; font-size: 18px; letter-spacing: 2px; }
+.meter { display: grid; grid-template-columns: 120px minmax(0, 1fr) 36px; align-items: center; gap: 8px; font-size: 13px; }
+.meter b { font-family: var(--f-num); font-weight: 400; text-align: right; }
+.mbar { height: 8px; background: #1a120c; border-radius: 4px; overflow: hidden; } .mbar i { display: block; height: 100%; }
+.warn { color: var(--loss); font-size: 13px; }
+.seg { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; } .seg button { padding: 4px 2px; font-size: 13px; }
+#taxSeg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.blist { display: flex; flex-direction: column; gap: 4px; }
+.bi { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; background: #30231a; border-radius: 6px; padding: 6px 8px; }
+.bi .hint { font-size: 12px; } .bi button { max-width: 130px; font-size: 13px; white-space: normal; line-height: 1.15; }
+.cost { color: var(--news); font-size: 12px; }
+.building { background: #33261b; border-radius: 6px; padding: 8px; color: var(--news); }
+.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid #3f7a3f; background: #1f3320; }
+.crow { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; width: 100%; }
+.crow span { color: var(--muted); font-size: 13px; }
+.fac { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start; background: #30231a; border-radius: 6px; padding: 8px; }
+.fac .meter { grid-template-columns: 110px minmax(0, 1fr) 30px; margin: 4px 0; }
+.fava { width: 64px; height: 77px; image-rendering: pixelated; border-radius: 3px; }
+#log { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.bar { display: flex; flex-wrap: wrap; gap: 6px; }
+/* разговор */
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(15,10,6,0.62); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dlg { max-width: 780px; width: 100%; background: linear-gradient(#33251b, #261b13); border: 2px solid var(--brass); border-radius: 12px; padding: 18px; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px 18px; box-shadow: 0 14px 50px rgba(0,0,0,0.6); }
+.dlg .ava { width: 300px; height: 360px; image-rendering: pixelated; grid-row: 1 / span 4; align-self: start; box-shadow: 0 4px 18px rgba(0,0,0,0.6); }
+.dlg .who { display: flex; flex-direction: column; gap: 2px; }
+.dlg .nm { font-family: var(--f-display); font-size: 24px; color: var(--brass); }
+.dlg .rl { font-size: 13px; color: var(--muted); }
+.dlg .tx { font-size: 16px; line-height: 1.45; }
+.dlg .bar { justify-content: flex-end; align-self: end; }
+.dice { justify-self: start; font-family: var(--f-num); font-size: 40px; color: #fff; background: #8a1c1c; border: 3px solid #f2d870; border-radius: 12px; width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; transform: rotate(-6deg); box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+.dice.crit { background: #d8a030; color: #2a1a10; }
+@media (max-width: 760px) {
+  .app { display: flex; flex-direction: column; padding: 0; gap: 0; }
+  .hud { border-radius: 0; border-width: 0 0 2px; padding: 6px 12px; gap: 2px; }
+  h1 { display: none; }
+  .money { font-size: 14px; } .date { font-size: 12px; }
+  .next { min-height: 38px; padding: 4px 10px; }
+  .goal { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .goal.open { white-space: normal; }
+  .mapcol { flex: none; height: 50dvh; }
+  .mapwrap { border-width: 0; border-radius: 0; }
+  .panel { flex: 1; border-radius: 10px 10px 0 0; border-width: 2px 0 0; padding: 8px 12px calc(70px + env(safe-area-inset-bottom, 0px)); }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: #20170f; border-top: 2px solid var(--brass); padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px)); }
+  .meter { grid-template-columns: 105px minmax(0, 1fr) 32px; }
+  .dlg { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 14px; max-height: calc(100dvh - 32px); overflow-y: auto; }
+  .dlg .ava { grid-row: auto; justify-self: center; width: min(62vw, 240px); height: auto; aspect-ratio: 5 / 6; }
+  .dlg .who { align-items: center; text-align: center; } .dlg .nm { font-size: 21px; }
+  .dice { justify-self: center; }
+}
+</style>
+
+<div class="app">
+  <header class="hud">
+    <div class="hudrow">
+      <h1>Заречный край</h1>
+      <span class="money" id="money"></span>
+      <span class="date" id="date"></span>
+      <span class="grow"></span>
+      <button type="button" class="next" id="next">Конец месяца ▶</button>
+    </div>
+    <div class="goal" id="goal" role="button" tabindex="0"></div>
+  </header>
+  <div class="mapcol"><div class="mapwrap">
+    <canvas id="view" aria-label="Карта Заречного края"></canvas>
+    <div class="zoom"><button type="button" id="zin" aria-label="Приблизить">+</button><button type="button" id="zout" aria-label="Отдалить">−</button></div>
+    <div class="tutbar" id="tutBar" hidden><span id="tutText"></span><button type="button" id="tutSkip" aria-label="Скрыть подсказки">✕</button></div>
+    <div class="toast" id="toast" hidden></div>
+  </div></div>
+  <div class="panel">
+    <nav class="tabs" id="tabs" aria-label="Разделы">
+      <button type="button" data-tab="act"><svg viewBox="0 0 24 24"><path d="M6 3v18"/><path d="M6 4h12l-3 4 3 4H6"/></svg>Дело</button>
+      <button type="button" data-tab="cities"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>Города</button>
+      <button type="button" data-tab="fac"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Нечисть</button>
+      <button type="button" data-tab="log"><svg viewBox="0 0 24 24"><path d="M7 3h11v16a2 2 0 0 1-2 2H6"/><path d="M7 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2"/><path d="M10 8h5M10 12h5"/></svg>Летопись</button>
+      <button type="button" data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Ещё</button>
+    </nav>
+    <section class="tabsec" data-tab="act"><div id="act"></div></section>
+    <section class="tabsec" data-tab="cities" hidden><h2>Города</h2><div id="cities" class="card"></div><h2>Отряды</h2><div id="units" class="card"></div></section>
+    <section class="tabsec" data-tab="fac" hidden><h2>Хозяева края</h2><div class="hint">В Заречном крае живут не одни люди. У каждой твари свой интерес: угодишь — поможет, обидишь — навредит.</div><div id="fac" class="card"></div></section>
+    <section class="tabsec" data-tab="log" hidden><h2>Летопись</h2><div id="log"></div></section>
+    <section class="tabsec" data-tab="more" hidden>
+      <h2>Подать</h2>
+      <div class="seg" id="taxSeg"><button type="button" data-tax="0">Лёгкая</button><button type="button" data-tax="1">Обычная</button><button type="button" data-tax="2">Тяжёлая</button></div>
+      <div class="hint">Подать — деньги с каждого двора: лёгкая 0, обычная 1, тяжёлая 2 монеты в месяц. Чем тяжелее, тем злее народ.</div>
+      <h2>Как играть</h2>
+      <div class="hint">Нажми на обоз, потом на клетку — он пойдёт туда. Над хорошим местом горят звёзды: смотри на хлеб, лес, камень и реку. Заложи город, корми людей, строй. Каждый месяц что-нибудь случается — решай. Когда все дела сделаны, жми «Конец месяца». Игра сохраняется сама.</div>
+      <h2>Настройки</h2>
+      <div class="bar"><button type="button" id="sound"></button><button type="button" id="music"></button><button type="button" id="restart">Новая игра</button></div>
+      <div class="hint" id="best"></div>
+      <div class="hint">Значки: <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a> (Lorc, Delapouite), CC BY 3.0. Звуки: ZzFX (Frank Force), MIT.</div>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="dlg" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgName">
+    <canvas class="ava" id="dlgAva" width="100" height="120" aria-hidden="true"></canvas>
+    <div class="who"><div class="nm" id="dlgName"></div><div class="rl" id="dlgRole"></div></div>
+    <div class="dice" id="dice" hidden></div>
+    <div class="tx" id="dlgText"></div>
+    <div class="bar" id="dlgBtns"></div>
+  </div>
+</div>
