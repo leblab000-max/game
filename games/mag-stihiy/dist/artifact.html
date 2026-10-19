@@ -503,7 +503,7 @@ class Run extends Phaser.Scene {
   constructor() { super({ key: "run" }); }
   create() {
     SC = this; CAM = this.cameras.main; makeTextures(this);
-    this.ground = this.add.tileSprite(0, 0, 256 * 14, 256 * 14, "tile").setOrigin(0).setDepth(-1e7);
+    this.ground = this.add.tileSprite(-2560, -2560, 5120, 5120, "tile").setOrigin(0).setDepth(-1e7).setTileScale(1 / K);
     CAM.setBackgroundColor("#2f5a3a");
     drawArenaEdge(this);
     this.hpG = this.add.graphics().setDepth(1.5e6);
@@ -513,8 +513,6 @@ class Run extends Phaser.Scene {
     const dt = Math.min(0.05, ms / 1000);
     if (R && !R.paused && !R.over) { if (R.stop > 0) R.stop -= dt; else tick(dt); }
     if (R) { tickNumbers(dt); drawPlayerHud(); const k = 1 - Math.exp(-dt * 9); R.cx += (R.x - R.cx) * k; R.cy += (R.y - R.cy) * k; CAM.centerOn(R.cx, R.cy); }
-    const cx = R ? R.cx : 0, cy = R ? R.cy : 0, vw = CAM.width / CAM.zoom, vh = CAM.height / CAM.zoom;
-    this.ground.setPosition(Math.floor((cx - vw / 2) / 256) * 256 - 512, Math.floor((cy - vh / 2) / 256) * 256 - 512);
     uiFrame(dt);
   }
 }
