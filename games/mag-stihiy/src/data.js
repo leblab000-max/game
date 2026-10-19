@@ -129,4 +129,19 @@ const META = {
   gain: { name: "Жадность", icon: "🪙", max: 5, cost: 70, desc: "+5% кристаллов" },
   reroll: { name: "Удача", icon: "🎲", max: 3, cost: 120, desc: "Бесплатный переброс в лавке" },
 };
-const newProfile = () => ({ coins: 0, meta: {}, start: "fire", best: { wave: 0, kills: 0 }, runs: 0, wins: 0, book: {}, t: 0 });
+// Персонажи: у каждого своё оружие на старте, сильная и слабая сторона
+const CHARS = {
+  novice: { name: "Ученик", icon: "🧙", start: "dagger", plus: ["Кристаллов +15%", "Лавка дешевле на 10%"], minus: [], st: { gain: 0.15 }, cheap: 0.9 },
+  pyro: { name: "Пиромант", icon: "🔥", start: "fire", plus: ["Огонь +35% урона", "Горение сильнее"], minus: ["Лёд −35% урона", "Здоровье −15"], el: { fire: 1.35, ice: 0.65 }, st: { maxhp: -15 },
+    lock: { text: "Дойди до 5-й волны", ok: P => P.best.wave >= 5 } },
+  smith: { name: "Кузнец", icon: "🔨", start: "hammer", plus: ["Ближний бой +45%", "Здоровье +35"], minus: ["Скорость бега −12%", "Дальний бой −15%"], kind: { melee: 1.45, _far: 0.85 }, st: { maxhp: 35, speed: -0.12 },
+    lock: { text: "Победи 500 врагов (всего)", ok: P => (P.kills || 0) >= 500 } },
+  storm: { name: "Буревестник", icon: "⚡", start: "bolt", plus: ["Скорость атак +18%", "Молния +25%"], minus: ["Здоровье −20"], el: { bolt: 1.25 }, st: { atk: 0.18, maxhp: -20 },
+    lock: { text: "Открой 3 рецепта", ok: P => Object.keys(P.book).length >= 3 } },
+  witch: { name: "Ледяная ведьма", icon: "❄️", start: "ice", plus: ["Враги медленнее на 12%", "Лёд +25%"], minus: ["Огонь −35%"], el: { ice: 1.25, fire: 0.65 }, slow: 0.88,
+    lock: { text: "Дойди до 10-й волны", ok: P => P.best.wave >= 10 } },
+  alch: { name: "Алхимик", icon: "⚗️", start: "wand", plus: ["Всё сваренное в котле — на ранг выше"], minus: ["Урон −12%"], st: { dmg: -0.12 }, brew: 1,
+    lock: { text: "Открой 8 рецептов", ok: P => Object.keys(P.book).length >= 8 } },
+};
+const charOpen = (id, P) => !CHARS[id].lock || CHARS[id].lock.ok(P) || (P.chars || {})[id];
+const newProfile = () => ({ char: "novice", chars: {}, kills: 0, coins: 0, meta: {}, start: "fire", best: { wave: 0, kills: 0 }, runs: 0, wins: 0, book: {}, t: 0 });

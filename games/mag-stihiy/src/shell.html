@@ -61,6 +61,12 @@ h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);text-transf
 .pick{border:3px solid var(--line);border-radius:14px;background:var(--panel);padding:9px 2px 7px;cursor:pointer;color:#fff;font-weight:700;font-size:11px;line-height:1.15}
 .pick span{display:block;font-size:24px;margin-bottom:4px}
 .pick.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(255,210,58,.6)}
+.picks.c3{grid-template-columns:repeat(3,1fr)}
+.pick.lock{opacity:.55}
+.charinfo{background:var(--panel);border:3px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px;color:var(--sub);text-align:left;margin:6px 0 2px}
+.charinfo b{color:#fff;font-size:15px}
+.pm{display:flex;flex-direction:column;gap:2px;margin-top:6px}.pm .p{color:var(--green)}.pm .m{color:#ff8a9a}
+.unl{margin:6px 0;padding:8px;border-radius:12px;background:var(--panel2);color:var(--gold)}.unl b{color:#fff}
 .stats{display:flex;justify-content:center;gap:14px;font-size:13px;color:var(--sub);margin:10px 0 0;flex-wrap:wrap}
 .stats b{color:#fff}
 .coins{position:absolute;top:calc(12px + env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));font-weight:800;font-size:18px;background:rgba(20,10,45,.75);padding:6px 12px;border-radius:14px;border:2px solid var(--line)}
@@ -132,8 +138,9 @@ h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);text-transf
     <div class="wrap">
       <p class="title">МАГ<br>СТИХИЙ</p>
       <p class="sub">20 волн орды. Между волнами — лавка и котёл:<br>смешивай оружие и стихии, открывай рецепты.</p>
-      <div style="font-size:13px;color:var(--sub);text-align:center">Оружие на старте</div>
-      <div class="picks" id="mPicks"></div>
+      <div style="font-size:13px;color:var(--sub);text-align:center">Выбери мага</div>
+      <div class="picks c3" id="mPicks"></div>
+      <div class="charinfo" id="mChar"></div>
       <button class="btn gold" id="mPlay">▶ В бой</button>
       <button class="btn" id="mShop">✨ Прокачка</button>
       <button class="btn" id="mBook">📖 Книга рецептов</button>

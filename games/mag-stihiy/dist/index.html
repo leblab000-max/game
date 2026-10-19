@@ -73,6 +73,12 @@ h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);text-transf
 .pick{border:3px solid var(--line);border-radius:14px;background:var(--panel);padding:9px 2px 7px;cursor:pointer;color:#fff;font-weight:700;font-size:11px;line-height:1.15}
 .pick span{display:block;font-size:24px;margin-bottom:4px}
 .pick.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(255,210,58,.6)}
+.picks.c3{grid-template-columns:repeat(3,1fr)}
+.pick.lock{opacity:.55}
+.charinfo{background:var(--panel);border:3px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px;color:var(--sub);text-align:left;margin:6px 0 2px}
+.charinfo b{color:#fff;font-size:15px}
+.pm{display:flex;flex-direction:column;gap:2px;margin-top:6px}.pm .p{color:var(--green)}.pm .m{color:#ff8a9a}
+.unl{margin:6px 0;padding:8px;border-radius:12px;background:var(--panel2);color:var(--gold)}.unl b{color:#fff}
 .stats{display:flex;justify-content:center;gap:14px;font-size:13px;color:var(--sub);margin:10px 0 0;flex-wrap:wrap}
 .stats b{color:#fff}
 .coins{position:absolute;top:calc(12px + env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));font-weight:800;font-size:18px;background:rgba(20,10,45,.75);padding:6px 12px;border-radius:14px;border:2px solid var(--line)}
@@ -146,8 +152,9 @@ h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);text-transf
     <div class="wrap">
       <p class="title">МАГ<br>СТИХИЙ</p>
       <p class="sub">20 волн орды. Между волнами — лавка и котёл:<br>смешивай оружие и стихии, открывай рецепты.</p>
-      <div style="font-size:13px;color:var(--sub);text-align:center">Оружие на старте</div>
-      <div class="picks" id="mPicks"></div>
+      <div style="font-size:13px;color:var(--sub);text-align:center">Выбери мага</div>
+      <div class="picks c3" id="mPicks"></div>
+      <div class="charinfo" id="mChar"></div>
       <button class="btn gold" id="mPlay">▶ В бой</button>
       <button class="btn" id="mShop">✨ Прокачка</button>
       <button class="btn" id="mBook">📖 Книга рецептов</button>
@@ -352,7 +359,22 @@ const META = {
   gain: { name: "Жадность", icon: "🪙", max: 5, cost: 70, desc: "+5% кристаллов" },
   reroll: { name: "Удача", icon: "🎲", max: 3, cost: 120, desc: "Бесплатный переброс в лавке" },
 };
-const newProfile = () => ({ coins: 0, meta: {}, start: "fire", best: { wave: 0, kills: 0 }, runs: 0, wins: 0, book: {}, t: 0 });
+// Персонажи: у каждого своё оружие на старте, сильная и слабая сторона
+const CHARS = {
+  novice: { name: "Ученик", icon: "🧙", start: "dagger", plus: ["Кристаллов +15%", "Лавка дешевле на 10%"], minus: [], st: { gain: 0.15 }, cheap: 0.9 },
+  pyro: { name: "Пиромант", icon: "🔥", start: "fire", plus: ["Огонь +35% урона", "Горение сильнее"], minus: ["Лёд −35% урона", "Здоровье −15"], el: { fire: 1.35, ice: 0.65 }, st: { maxhp: -15 },
+    lock: { text: "Дойди до 5-й волны", ok: P => P.best.wave >= 5 } },
+  smith: { name: "Кузнец", icon: "🔨", start: "hammer", plus: ["Ближний бой +45%", "Здоровье +35"], minus: ["Скорость бега −12%", "Дальний бой −15%"], kind: { melee: 1.45, _far: 0.85 }, st: { maxhp: 35, speed: -0.12 },
+    lock: { text: "Победи 500 врагов (всего)", ok: P => (P.kills || 0) >= 500 } },
+  storm: { name: "Буревестник", icon: "⚡", start: "bolt", plus: ["Скорость атак +18%", "Молния +25%"], minus: ["Здоровье −20"], el: { bolt: 1.25 }, st: { atk: 0.18, maxhp: -20 },
+    lock: { text: "Открой 3 рецепта", ok: P => Object.keys(P.book).length >= 3 } },
+  witch: { name: "Ледяная ведьма", icon: "❄️", start: "ice", plus: ["Враги медленнее на 12%", "Лёд +25%"], minus: ["Огонь −35%"], el: { ice: 1.25, fire: 0.65 }, slow: 0.88,
+    lock: { text: "Дойди до 10-й волны", ok: P => P.best.wave >= 10 } },
+  alch: { name: "Алхимик", icon: "⚗️", start: "wand", plus: ["Всё сваренное в котле — на ранг выше"], minus: ["Урон −12%"], st: { dmg: -0.12 }, brew: 1,
+    lock: { text: "Открой 8 рецептов", ok: P => Object.keys(P.book).length >= 8 } },
+};
+const charOpen = (id, P) => !CHARS[id].lock || CHARS[id].lock.ok(P) || (P.chars || {})[id];
+const newProfile = () => ({ char: "novice", chars: {}, kills: 0, coins: 0, meta: {}, start: "fire", best: { wave: 0, kills: 0 }, runs: 0, wins: 0, book: {}, t: 0 });
 
 // =====================================================================
 //  Текстуры прототипа: всё рисуется кодом при запуске.
@@ -542,7 +564,8 @@ function drawArenaEdge(sc) {
 // =====================================================================
 //  Новый забег
 // =====================================================================
-function newRun(start) {
+function newRun(cid) {
+  const C = CHARS[cid], start = C.start;
   clearRun();
   const m = P.meta;
   const st = { dmg: 1 + 0.05 * (m.might || 0), atk: 1, area: 1, speed: 1 + 0.04 * (m.speed || 0), crit: 0.05, regen: 0, magnet: 1, gain: 1 + 0.05 * (m.gain || 0) };
@@ -553,6 +576,7 @@ function newRun(start) {
     wave: 0, waveT: 0, inWave: false, ev: 0, spawnAcc: 0, freeRolls: m.reroll || 0, cx: 0, cy: 0, earned: 0 };
   R.spr = img("mage", 0, 0); R.orb = glow(0, 0, 0xc8a8ff, 22);
   CAM.centerOn(0, 0);
+  R.ch = C; if (C.st) applySt(C.st);
   addWeapon(start, 0);
   startWave(1);
 }
@@ -633,9 +657,17 @@ function spawnFoe(type, x, y, elite) {
   if (d.boss) { R.boss = e; bossBar(e); }
   R.foes.push(e); return e;
 }
+// множитель урона от персонажа: стихия и вид оружия
+let MUL = 1;
+function wMul(d) {
+  const C = R.ch; let m = 1;
+  if (C.el) { const els = d.fuse ? [FUSE[d.id].a, FUSE[d.id].b] : d.elem ? [d.elem] : []; for (const e of els) m *= Math.pow(C.el[e] || 1, 1 / els.length); }
+  if (C.kind) m *= d.kind === "melee" ? (C.kind.melee || 1) : (C.kind._far || 1);
+  return m;
+}
 function hurtFoe(e, dmg, col, kx = 0, ky = 0, noNum, elem, tier) {
   if (e.dead) return;
-  const crit = Math.random() < R.st.crit; dmg = Math.max(1, Math.round(dmg * R.st.dmg * rnd(0.9, 1.1) * (crit ? 2 : 1)));
+  const crit = Math.random() < R.st.crit; dmg = Math.max(1, Math.round(dmg * MUL * R.st.dmg * rnd(0.9, 1.1) * (crit ? 2 : 1)));
   e.hp -= dmg; e.flash = 0.08; e.kx += kx * e.kb; e.ky += ky * e.kb;
   if (!noNum && (crit || e.d.boss || e.elite || Math.random() < 0.35)) number(e.x, e.y - e.r - 6, dmg, crit);
   snd("hit", 0.04);
@@ -651,7 +683,7 @@ function elemHit(e, el, t, dmg) {
   else if (el === "bolt" && !elemHit.busy) { elemHit.busy = true; const n = nearest(e.x, e.y, 110, new Set([e])); if (n) { zap(e.x, e.y, n.x, n.y, ELEM.bolt.col); hurtFoe(n, dmg * 0.5, ELEM.bolt.col, 0, 0, true); } elemHit.busy = false; }
 }
 function killFoe(e, col) {
-  e.dead = true; R.kills++;
+  e.dead = true; R.kills++; P.kills = (P.kills || 0) + 1;
   burst(e.x, e.y, e.d.col, e.d.boss ? 40 : e.elite ? 22 : 7); if (col) burst(e.x, e.y, col, 4);
   const s = e.spr; SC.tweens.add({ targets: s, scaleX: e.base * 1.5, scaleY: e.base * 0.4, alpha: 0, duration: 160, onComplete: () => s.destroy() });
   if (e.halo) { const h = e.halo; SC.tweens.add({ targets: h, alpha: 0, duration: 300, onComplete: () => h.destroy() }); }
@@ -681,7 +713,7 @@ function updateFoes(dt) {
       else if (e.cT <= 0 && d < 280) { e.st = "wind"; e.cT = 0.6; e.dx = dx; e.dy = dy; }
     }
     if (e.d.boss) { e.shootT -= dt; if (e.shootT <= 0) { const n = e.type === "boss2" ? 14 : 9; e.shootT = e.type === "boss2" ? 2.2 : 3.2; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2 + t; enemyShot(e.x, e.y, Math.cos(a), Math.sin(a)); } } }
-    e.x = clampA(e.x + (vx * e.sp * sm + e.kx) * dt, e.r); e.y = clampA(e.y + (vy * e.sp * sm + e.ky) * dt, e.r);
+    const cs = R.ch.slow || 1; e.x = clampA(e.x + (vx * e.sp * sm * cs + e.kx) * dt, e.r); e.y = clampA(e.y + (vy * e.sp * sm * cs + e.ky) * dt, e.r);
     const kd = Math.exp(-dt * 9); e.kx *= kd; e.ky *= kd;
   }
   for (const a of GRID.values()) {
@@ -822,7 +854,7 @@ function shoot(kind, x, y, a, sp, o) {
   if (kind === "fire" || kind === "missile") s = glow(x, y, o.col, 30, 1.2e6);
   else s = img("shard", x, y, 1.2e6).setTint(o.col).setRotation(a);
   if (kind === "dagger") s.setScale(0.75 / K, 0.6 / K);
-  R.shots.push(Object.assign({ kind, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, sp, spr: s, hit: new Set() }, o));
+  R.shots.push(Object.assign({ kind, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, sp, spr: s, hit: new Set(), mul: MUL }, o));
 }
 function updateShots(dt) {
   for (const p of R.shots) {
@@ -834,6 +866,7 @@ function updateShots(dt) {
     p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; p.spr.setPosition(p.x, p.y);
     if (p.kind === "fire") { p.spr.setScale((28 + Math.sin(R.t * 30) * 4) / 64 / K); if (Math.random() < dt * 40) burst(p.x, p.y, 0xff5a1a, 1); }
     if (p.kind === "dagger") p.spr.setRotation(Math.atan2(p.vy, p.vx));
+    MUL = p.mul;
     near(p.x, p.y, p.r, e => {
       if (p.dead || p.hit.has(e)) return; p.hit.add(e);
       if (p.kind === "fire") { explode(p.x, p.y, area(p.boom), p.dmg, ELEM.fire.col, 180, 0, "fire"); p.dead = true; }
@@ -869,7 +902,7 @@ const FUSE_CAST = {
       o.tick -= dt; if (o.tick <= 0) { o.tick = 0.25; near(o.x, o.y, rad, e => hurtFoe(e, 9 * M, 0xff8a2a, 0, 0, false, "fire", t)); }
       return o.life > 0;
     };
-    R.fx.push(o);
+    o.mul = MUL; R.fx.push(o);
   },
   fireIce(w, t, dt) {
     if (!fcd(w, 2.8, t, dt)) return; const M = FUSE_MUL[t];
@@ -881,7 +914,7 @@ const FUSE_CAST = {
       for (let i = 0; i < 3; i++) { const a = Math.random() * 7; burst(R.x + Math.cos(a) * o.r, R.y + Math.sin(a) * o.r, 0xe0f0ff, 1); }
       return o.r < o.max;
     };
-    R.fx.push(o);
+    o.mul = MUL; R.fx.push(o);
   },
   fireBolt(w, t, dt) {
     if (!fcd(w, 2.3, t, dt)) return; const M = FUSE_MUL[t];
@@ -897,7 +930,7 @@ const FUSE_CAST = {
         if (o.t <= 0) { explode(tx, ty, area(70), 55 * M, 0xff5a2a, 220, 0, "fire"); CAM.shake(70, 0.002); crater(tx, ty); return false; }
         return true;
       };
-      R.fx.push(o);
+      o.mul = MUL; R.fx.push(o);
     }
   },
   iceWind(w, t, dt) {
@@ -922,8 +955,9 @@ const FUSE_CAST = {
 };
 function crater(x, y) { const c = glow(x, y, 0x000000, 120, -5e5).setBlendMode(Phaser.BlendModes.NORMAL).setAlpha(0.35); SC.tweens.add({ targets: c, alpha: 0, delay: 1500, duration: 1500, onComplete: () => c.destroy() }); }
 function updateWeapons(dt) {
-  for (const w of R.weap) CAST[w.def.kind](w, w.def, w.tier, dt);
-  R.fx = R.fx.filter(f => { const ok = f.step(dt); if (!ok) f.kill(); return ok; });
+  for (const w of R.weap) { MUL = wMul(w.def); CAST[w.def.kind](w, w.def, w.tier, dt); }
+  R.fx = R.fx.filter(f => { MUL = f.mul || 1; const ok = f.step(dt); if (!ok) f.kill(); return ok; });
+  MUL = 1;
 }
 
 // =====================================================================
@@ -1017,6 +1051,58 @@ function yaRewarded(cb) {
 function yaScore(v) { if (!YA.sdk || !YA.auth || !YA.lbOk) return; try { YA.sdk.leaderboards.setScore("kills", v).catch(() => { YA.lbOk = false; }); } catch (e) {} }
 
 // =====================================================================
+//  Музыка: своя мелодия, синтезируется на лету (ничего не загружаем)
+//  Ля минор, 112 ударов в минуту. В бою — бас, бочка и арпеджио,
+//  в лавке и меню — тихо и спокойно.
+// =====================================================================
+const MUS = { mode: "off", next: 0, step: 0, vol: 0 };
+const mtof = m => 440 * 2 ** ((m - 69) / 12);
+const PROG = [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]];   // Am F G Em
+const ARP = [0, 1, 2, 1, 0, 2, 1, 2];
+// мелодия: 64 шага (4 такта), нули — паузы. Ложится на аккорды выше
+const MEL = [76, 0, 0, 74, 72, 0, 69, 0, 72, 0, 74, 0, 76, 0, 0, 0,
+  77, 0, 0, 76, 74, 0, 72, 0, 69, 0, 72, 0, 74, 0, 0, 0,
+  79, 0, 0, 77, 76, 0, 74, 0, 71, 0, 74, 0, 79, 0, 76, 0,
+  76, 0, 74, 0, 72, 0, 71, 0, 69, 0, 0, 0, 71, 0, 72, 0];
+function mNote(t, m, dur, type, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = mtof(m);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + dur + 0.05);
+}
+function mKick(t) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+  g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+  o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + 0.2);
+}
+function mHat(t, v) {
+  const n = AC.createBufferSource(), b = AC.createBuffer(1, 2205, 44100), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  const f = AC.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7000;
+  const g = AC.createGain(); g.gain.value = v; n.buffer = b; n.connect(f); f.connect(g); g.connect(musicGain); n.start(t);
+}
+function musicTick() {
+  if (!AC || !musicGain) return;
+  const want = soundOn && MUS.mode !== "off" ? (MUS.mode === "battle" ? 0.26 : 0.16) : 0;
+  MUS.vol += (want - MUS.vol) * 0.15; musicGain.gain.value = MUS.vol;
+  if (MUS.vol < 0.005) { MUS.next = AC.currentTime + 0.05; return; }
+  const spb = 60 / 112 / 2, battle = MUS.mode === "battle";
+  if (MUS.next < AC.currentTime) MUS.next = AC.currentTime + 0.05;
+  while (MUS.next < AC.currentTime + 0.25) {
+    const s = MUS.step, t = MUS.next, ch = PROG[(s >> 4) % 4];
+    if (s % 8 === 0) mNote(t, ch[0] - 24, spb * 7, "triangle", 0.32);
+    if (battle && s % 4 === 0) mKick(t);
+    if (battle && s % 2 === 1) mHat(t, s % 4 === 3 ? 0.06 : 0.03);
+    if (battle || s % 2 === 0) mNote(t, ch[ARP[s % 8]] + (s % 16 >= 8 ? 12 : 0), spb * (battle ? 0.8 : 1.8), "square", battle ? 0.035 : 0.025);
+    const m = MEL[s % 64]; if (m && (battle || s % 128 < 64)) mNote(t, m, spb * 1.9, "triangle", battle ? 0.11 : 0.07);
+    MUS.next += spb; MUS.step++;
+  }
+}
+setInterval(musicTick, 60);
+function music(mode) { MUS.mode = mode; }
+
+// =====================================================================
 //  Интерфейс: меню, лавка, котёл, книга рецептов, итоги, управление
 // =====================================================================
 const $ = id => document.getElementById(id);
@@ -1051,10 +1137,13 @@ function show(s) {
   screen = s;
   $("menu").hidden = s !== "menu"; $("shopScr").hidden = s !== "meta"; $("hud").hidden = s !== "game"; $("shop").hidden = s !== "shop";
   if (s === "menu") renderMenu(); if (s === "meta") renderMeta();
+  music(s === "game" ? "battle" : "calm");
 }
 function renderMenu() {
   $("mCoins").textContent = "🪙 " + P.coins;
-  $("mPicks").innerHTML = BASIC.map(id => `<button class="pick ${P.start === id ? "on" : ""}" data-start="${id}"><span>${WEAP[id].icon}</span>${WEAP[id].name}</button>`).join("");
+  $("mPicks").innerHTML = Object.entries(CHARS).map(([id, c]) => { const open = charOpen(id, P); return `<button class="pick ${P.char === id ? "on" : ""} ${open ? "" : "lock"}" data-char="${id}"><span>${open ? c.icon : "🔒"}</span>${c.name}</button>`; }).join("");
+  const c = CHARS[P.char], w = WEAP[c.start];
+  $("mChar").innerHTML = `<b>${c.icon} ${c.name}</b> · начинает с: ${w.icon} ${w.name}<div class="pm">${c.plus.map(t => `<span class="p">+ ${t}</span>`).join("")}${c.minus.map(t => `<span class="m">− ${t.replace(/^[−-]\s*/, "")}</span>`).join("")}</div>`;
   $("mStats").innerHTML = `<span>Рекорд: <b>волна ${P.best.wave}</b></span><span>Побед: <b>${P.wins}</b></span><span>Рецептов: <b>${Object.keys(P.book).length}/${RECIPES.length}</b></span>`;
   $("mSound").textContent = soundOn ? "🔊 Звук" : "🔇 Звук";
 }
@@ -1068,7 +1157,7 @@ function renderMeta() {
 const wsHtml = (w, i, cls = "", attr = "") => { const d = wdef(w.id); const two = Array.from(d.icon.replace(/\uFE0F/g, "")).length > 1; return `<button class="ws ${cls}" style="--tc:${TCOL[w.tier]};${two ? "font-size:" + (cls.includes("big") ? 15 : 11) + "px" : ""}" ${attr} title="${esc(d.name)}">${d.icon}<small>${TIERS[w.tier]}</small></button>`; };
 
 // ---------- бой
-function startGame() { show("game"); newRun(P.start); renderSlots(); P.runs++; saveP(); }
+function startGame() { show("game"); newRun(P.char); renderSlots(); P.runs++; saveP(); }
 function renderSlots() { if (R) $("slots").innerHTML = R.weap.map((w, i) => wsHtml(w, i)).join(""); }
 let hudT = 0;
 function uiFrame(dt) {
@@ -1114,12 +1203,13 @@ function chooseLu(i) { applySt(luOpts[i].st); R.pend--; $("lvlup").hidden = true
 // ---------- лавка алхимика
 const SH = { offers: [], roll: 0, sel: null, pot: [] };
 const TMUL = [1, 1.9, 3.4, 6];
-const wPrice = (id, t) => Math.round(wdef(id).price * TMUL[t] * (1 + R.wave * 0.12));
-const iPrice = id => Math.round(ITEMS[id].price * (1 + R.wave * 0.13) * (1 + 0.12 * (R.items[id] || 0)));
+const cheap = () => (R && R.ch.cheap) || 1;
+const wPrice = (id, t) => Math.round(cheap() * wdef(id).price * TMUL[t] * (1 + R.wave * 0.12));
+const iPrice = id => Math.round(cheap() * ITEMS[id].price * (1 + R.wave * 0.13) * (1 + 0.12 * (R.items[id] || 0)));
 function rollTier(w) { const r = Math.random(); if (w >= 15 && r < 0.08) return 3; if (w >= 9 && r < (w >= 15 ? 0.3 : 0.14)) return 2; if (w >= 4 && r < (w >= 9 ? 0.5 : 0.3)) return 1; return 0; }
 function genOffers() { const w = R.wave + 1, items = Object.keys(ITEMS); SH.offers = Array.from({ length: 4 }, () => Math.random() < 0.6 ? { k: "w", id: pick(BASIC), tier: rollTier(w) } : { k: "i", id: pick(items) }); }
 function openShop() {
-  screen = "shop"; $("hud").hidden = true; $("shop").hidden = false; $("shop").scrollTop = 0;
+  screen = "shop"; music("calm"); $("hud").hidden = true; $("shop").hidden = false; $("shop").scrollTop = 0;
   SH.roll = 0; SH.sel = null; SH.pot = []; genOffers(); renderShop();
 }
 function rollCost() { return R.freeRolls > 0 && SH.roll === 0 ? 0 : 2 + R.wave + SH.roll * 2; }
@@ -1163,6 +1253,7 @@ function buyOffer(i) {
 function doBrew() {
   const [a, b] = SH.pot, r = brew(R.weap[a], R.weap[b]); if (!r) return;
   const isNew = r.kind !== "up" && !P.book[r.id];
+  if (R.ch.brew && r.kind !== "up") r.tier = Math.min(3, r.tier + 1);
   [a, b].sort((x, y) => y - x).forEach(i => removeWeapon(i)); addWeapon(r.id, r.tier);
   if (r.kind !== "up") { P.book[r.id] = 1; saveP(); }
   SH.pot = []; SH.sel = null; sfx(SND.brew);
@@ -1192,10 +1283,12 @@ function endRun(won) {
   P.coins += earned; if (won) P.wins++;
   const rec = r.wave > P.best.wave;
   if (rec) P.best.wave = r.wave; if (r.kills > P.best.kills) P.best.kills = r.kills;
+  const newly = Object.keys(CHARS).filter(id => CHARS[id].lock && !P.chars[id] && CHARS[id].lock.ok(P)); newly.forEach(id => P.chars[id] = 1);
   yaScore(r.wave * 1000 + Math.min(999, r.kills)); saveP(); lastEnd = { earned, doubled: false };
   $("endBox").innerHTML = `<h1>${won ? "Победа! Орда разбита!" : "Забег окончен"}</h1>${rec ? `<div style="color:var(--gold);font-weight:800">Новый рекорд!</div>` : ""}
     <div class="rows">Волна: <b>${r.wave}/${WAVES_TOTAL}</b> · Уровень: <b>${r.lvl}</b> · Врагов: <b>${r.kills}</b></div>
     <div class="build">${r.weap.map((w, i) => wsHtml(w, i)).join("")}</div>
+    ${newly.map(id => `<div class="unl">Новый персонаж: <b>${CHARS[id].icon} ${CHARS[id].name}</b></div>`).join("")}
     <div class="big" id="eCoins">+${earned} 🪙</div>
     <button class="btn green" id="eDouble">▶ Удвоить монеты<small>за просмотр ролика</small></button>
     <button class="btn gold" id="eAgain">Ещё забег</button><button class="btn" id="eMenu">В меню</button>`;
@@ -1207,7 +1300,7 @@ function leaveRun(then) { $("end").hidden = true; $("shop").hidden = true; clear
 document.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b || b.disabled) return; audio();
   const ds = b.dataset;
-  if (ds.start) { P.start = ds.start; saveP(); renderMenu(); sfx(SND.coin); return; }
+  if (ds.char) { const id = ds.char; if (!charOpen(id, P)) { toast("🔒 " + CHARS[id].lock.text); return; } P.char = id; saveP(); renderMenu(); sfx(SND.coin); return; }
   if (ds.buy) { const id = ds.buy, m = META[id], l = P.meta[id] || 0, c = m.cost * (l + 1); if (P.coins >= c && l < m.max) { P.coins -= c; P.meta[id] = l + 1; saveP(); sfx(SND.lvl); renderMeta(); } return; }
   if (ds.lu !== undefined) { sfx(SND.coin); chooseLu(+ds.lu); return; }
   if (ds.buyo !== undefined) { buyOffer(+ds.buyo); return; }
@@ -1239,7 +1332,7 @@ document.addEventListener("click", e => {
 function onReady() { show("menu"); yaStart(); }
 function boot() {
   soundOn = load("sound", true); P = Object.assign(newProfile(), load("p", {}));
-  if (!WEAP[P.start]) P.start = "fire"; if (!P.best || P.best.wave === undefined) P.best = { wave: 0, kills: 0 }; P.book = P.book || {};
+  if (!CHARS[P.char]) P.char = "novice"; P.chars = P.chars || {}; if (!P.best || P.best.wave === undefined) P.best = { wave: 0, kills: 0 }; P.book = P.book || {};
   G = new Phaser.Game({ type: Phaser.AUTO, parent: "stage", width: innerWidth * DPR, height: innerHeight * DPR, backgroundColor: "#2f5a3a",
     scale: { mode: Phaser.Scale.NONE, zoom: 1 / DPR }, render: { antialias: true, powerPreference: "high-performance" }, audio: { noAudio: true }, banner: false, scene: [Run] });
   addEventListener("resize", () => { G.scale.resize(innerWidth * DPR, innerHeight * DPR); G.scale.setZoom(1 / DPR); fitCamera(); });

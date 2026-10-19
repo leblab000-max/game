@@ -11,7 +11,7 @@ for w in (400, 500, 700, 800):
         ff += f"@font-face{{font-family:Rubik;font-style:normal;font-weight:{w};font-display:swap;src:url(data:font/woff2;base64,{b}) format('woff2');unicode-range:{rng}}}\n"
 h = open(f'{H}/src/shell.html').read().replace('<style>\n', '<style>\n' + ff, 1)
 phaser = open(f'{V}/phaser-3.90.0.min.js').read()
-js = '\n'.join(open(f'{H}/src/{f}').read() for f in ['data.js', 'tex.js', 'run.js', 'ya.js', 'ui.js'])
+js = '\n'.join(open(f'{H}/src/{f}').read() for f in ['data.js', 'tex.js', 'run.js', 'ya.js', 'music.js', 'ui.js'])
 js = open(f'{ROOT}/shared/zzfx.js').read() + '\n' + js
 body = '\n<script>\n' + phaser + '\n</script>\n<script>\n"use strict";\n' + js + '\n</script>\n'
 full = '<!doctype html>\n<html lang="ru">\n<head>\n<meta charset="utf-8">\n' + h.replace('<div class="app">', '</head>\n<body>\n<div class="app">', 1) + body + '</body>\n</html>\n'
