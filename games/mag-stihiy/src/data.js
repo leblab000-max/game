@@ -43,9 +43,10 @@ const PASS = {
 
 // Враги
 const FOES = {
-  slime: { name: "Слизень", hp: 9, sp: 44, dmg: 8, r: 13, xp: 1, col: 0x7ad65a },
-  bat: { name: "Летучая мышь", hp: 5, sp: 92, dmg: 5, r: 10, xp: 1, col: 0xa877e8 },
+  slime: { name: "Слизень", hp: 12, sp: 44, dmg: 8, r: 13, xp: 1, col: 0x7ad65a },
+  bat: { name: "Летучая мышь", hp: 7, sp: 92, dmg: 5, r: 10, xp: 1, col: 0xa877e8 },
   imp: { name: "Бесёнок", hp: 16, sp: 46, dmg: 6, r: 12, xp: 2, col: 0xf05a5a, ranged: true },
+  boar: { name: "Кабан", hp: 34, sp: 48, dmg: 14, r: 15, xp: 3, col: 0x9a6a44, charger: true, heavy: 0.6 },
   ghost: { name: "Призрак", hp: 26, sp: 62, dmg: 10, r: 14, xp: 3, col: 0xcfe6ff },
   brute: { name: "Голем", hp: 60, sp: 30, dmg: 15, r: 21, xp: 5, col: 0xb98048, heavy: 0.35 },
   boss1: { name: "Каменный великан", hp: 1400, sp: 40, dmg: 25, r: 46, xp: 60, col: 0x9a7650, boss: true, heavy: 0.05 },
@@ -54,13 +55,13 @@ const FOES = {
 // Кого и сколько присылать по минутам
 const WAVES = [
   { slime: 1 },
-  { slime: 3, bat: 2 },
-  { slime: 2, bat: 2, imp: 1 },
+  { slime: 3, bat: 2, boar: 0.6, imp: 0.5 },
+  { slime: 2, bat: 2, imp: 1, boar: 1 },
   { slime: 2, bat: 2, imp: 1, brute: 0.5 },
   { slime: 1, bat: 2, imp: 1, ghost: 1, brute: 0.6 },
-  { bat: 2, imp: 1, ghost: 2, brute: 1 },
+  { bat: 2, imp: 1, ghost: 2, brute: 1, boar: 1 },
   { slime: 2, bat: 2, ghost: 2, brute: 1, imp: 1 },
-  { bat: 3, ghost: 2, brute: 1.5, imp: 1 },
+  { bat: 3, ghost: 2, brute: 1.5, imp: 1, boar: 1.5 },
   { slime: 2, bat: 2, ghost: 2, brute: 2, imp: 1.5 },
   { bat: 2, ghost: 3, brute: 2, imp: 2 },
 ];

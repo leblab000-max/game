@@ -82,8 +82,9 @@ class Run extends Phaser.Scene {
   update(_, ms) {
     const dt = Math.min(0.05, ms / 1000);
     if (R && !R.paused && !R.over) { if (R.stop > 0) R.stop -= dt; else tick(dt * (R.slowmo || 1)); }
-    if (R) { tickNumbers(dt); drawPlayerHud(); }
-    const v = CAM.worldView; this.ground.setPosition(Math.floor(v.x / 256) * 256 - 512, Math.floor(v.y / 256) * 256 - 512);
+    if (R) { tickNumbers(dt); drawPlayerHud(); const k = 1 - Math.exp(-dt * 9); R.cx += (R.x - R.cx) * k; R.cy += (R.y - R.cy) * k; CAM.centerOn(R.cx, R.cy); }
+    const cx = R ? R.cx : 0, cy = R ? R.cy : 0, vw = CAM.width / CAM.zoom, vh = CAM.height / CAM.zoom;
+    this.ground.setPosition(Math.floor((cx - vw / 2) / 256) * 256 - 512, Math.floor((cy - vh / 2) / 256) * 256 - 512);
     uiFrame(dt);
   }
 }
@@ -104,7 +105,7 @@ function newRun(start) {
     elems: { [start]: 1 }, fus: {}, pass: {}, cd: {}, foes: [], shots: [], ebul: [], gems: [], fx: [], blades: [],
     paused: false, over: false, pend: 0, rerolls: m.reroll || 0, revived: false, ev: 0, spawnAcc: 0, boss: null, stop: 0, hurtT: 0, gemCombo: 0, gemT: 0, windA: 0, aura: null, clouds: null };
   R.spr = img("mage", 0, 0); R.orb = glow(0, 0, ELEM[start].col, 22);
-  CAM.startFollow(R.spr, false, 0.14, 0.14); CAM.centerOn(0, 0);
+  R.cx = 0; R.cy = 0; CAM.centerOn(0, 0);
   for (let i = 0; i < 8; i++) spawnFoe("slime", ...ringPos(1.05));
   yaGameplay(true);
 }
@@ -172,6 +173,12 @@ function updateFoes(dt) {
       if (d < 210) { vx = -dy * 0.8 - dx * 0.3; vy = dx * 0.8 - dy * 0.3; }
       e.shootT -= dt * sm; if (e.shootT <= 0 && d < 340) { e.shootT = rnd(2.4, 3.2); enemyShot(e.x, e.y, dx, dy); }
     }
+    if (e.d.charger) {
+      e.cT = (e.cT ?? rnd(1, 3)) - dt * sm;
+      if (e.st === "wind") { vx = vy = 0; if (e.cT <= 0) { e.st = "dash"; e.cT = 0.5; } }
+      else if (e.st === "dash") { vx = e.dx * 6.5; vy = e.dy * 6.5; if (Math.random() < 0.5) burst(e.x, e.y + e.r, 0xc8a070, 1); if (e.cT <= 0) { e.st = ""; e.cT = rnd(2.2, 3.2); } }
+      else if (e.cT <= 0 && d < 280) { e.st = "wind"; e.cT = 0.6; e.dx = dx; e.dy = dy; }
+    }
     if (e.d.boss) { e.shootT -= dt; if (e.shootT <= 0) { e.shootT = e.type === "boss2" ? 2.2 : 3.2; for (let k = 0; k < (e.type === "boss2" ? 14 : 9); k++) { const a = k / (e.type === "boss2" ? 14 : 9) * Math.PI * 2 + t; enemyShot(e.x, e.y, Math.cos(a), Math.sin(a)); } } }
     e.x += (vx * e.sp * sm + e.kx) * dt; e.y += (vy * e.sp * sm + e.ky) * dt;
     const kd = Math.exp(-dt * 9); e.kx *= kd; e.ky *= kd;
@@ -193,7 +200,7 @@ function updateFoes(dt) {
     const w = Math.sin(t * (e.type === "bat" ? 22 : 9) + e.seed);
     if (e.type === "bat") s.setScale(e.base * (1 + w * 0.18), e.base); else s.setScale(e.base * (1 + w * 0.05), e.base * (1 - w * 0.06));
     s.setFlipX(R.x < e.x);
-    if (e.flash > 0) { e.flash -= 1 / 60; s.setTintFill(0xffffff); } else if (e.frzT > 0) s.setTint(0x88e8ff); else if (e.slowT > 0) s.setTint(0xc0f0ff); else s.clearTint();
+    if (e.st === "wind") { s.setTint(0xff7a7a); s.x += Math.sin(t * 60) * 1.5; } else if (e.flash > 0) { e.flash -= 1 / 60; s.setTintFill(0xffffff); } else if (e.frzT > 0) s.setTint(0x88e8ff); else if (e.slowT > 0) s.setTint(0xc0f0ff); else s.clearTint();
     if (e.halo) e.halo.setPosition(e.x, e.y).setDepth(e.y - 1);
   }
   R.foes = R.foes.filter(e => !e.dead);
@@ -225,14 +232,13 @@ function updatePlayer(dt) {
   R.orb.setPosition(R.x + 15 * R.face, R.y - 12 + b * 1.5).setDepth(R.y + 5).setScale((24 + Math.sin(R.t * 8) * 4) / 64 / K);
   if (R.hurtT > 0) { R.hurtT -= dt; R.spr.setTint(Math.floor(R.hurtT * 30) % 2 ? 0xff7a7a : 0xffffff); } else R.spr.clearTint();
   // контакт с врагами
-  let dmg = 0; near(R.x, R.y, PR, e => { if (e.frzT <= 0) dmg += e.dmg; });
-  if (dmg) damagePlayer(Math.min(dmg * 0.9, 40) * dt, true);
+  near(R.x, R.y, PR, e => { if (e.frzT > 0 || (e.hitT || 0) > R.t) return; e.hitT = R.t + 1.0; damagePlayer(e.dmg); });
   if (R.pass.heart) R.hp = Math.min(R.maxhp, R.hp + R.pass.heart * 0.25 * dt);
 }
 function damagePlayer(v, cont) {
   if (R.over) return;
   R.hp -= v;
-  if (R.hurtT <= 0) { R.hurtT = 0.35; snd("hurt", 0.25); CAM.shake(120, 0.004); hurtFlash(); }
+  if (R.hurtT <= 0) { R.hurtT = 0.35; snd("hurt", 0.25); CAM.shake(90, 0.003); hurtFlash(); }
   if (R.hp <= 0) { R.hp = 0; die(); }
 }
 function drawPlayerHud() {
@@ -322,7 +328,6 @@ function explode(x, y, rad, dmg, col, kb, freeze) {
   const r = img("ring", x, y, 1.26e6).setTint(col).setBlendMode(ADD()); sizeTo(r, rad * 0.6); const s1 = rad * 2.1 / 128 / K;
   SC.tweens.add({ targets: r, scale: s1, alpha: 0, duration: 280, ease: "Cubic.out", onComplete: () => r.destroy() });
   burst(x, y, col, Math.min(26, 6 + rad / 4 | 0)); snd("boom", 0.06);
-  if (rad > 60) CAM.shake(110, 0.003);
 }
 
 // ---------- слияния
@@ -367,7 +372,7 @@ const FUSE_CAST = {
       o.step = dt => {
         o.t -= dt; const k = Math.max(0, o.t / 0.55);
         o.rock.setPosition(tx + 160 * k, ty - 420 * k); burst(o.rock.x, o.rock.y, 0xff4a1a, 1); o.mark.setAlpha(0.35 + Math.sin(R.t * 30) * 0.3);
-        if (o.t <= 0) { explode(tx, ty, area(70), 55, 0xff5a2a, 220); CAM.shake(140, 0.005); crater(tx, ty); return false; }
+        if (o.t <= 0) { explode(tx, ty, area(70), 55, 0xff5a2a, 220); CAM.shake(70, 0.002); crater(tx, ty); return false; }
         return true;
       };
       R.fx.push(o);

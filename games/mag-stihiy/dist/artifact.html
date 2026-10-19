@@ -203,9 +203,10 @@ const PASS = {
 
 // Враги
 const FOES = {
-  slime: { name: "Слизень", hp: 9, sp: 44, dmg: 8, r: 13, xp: 1, col: 0x7ad65a },
-  bat: { name: "Летучая мышь", hp: 5, sp: 92, dmg: 5, r: 10, xp: 1, col: 0xa877e8 },
+  slime: { name: "Слизень", hp: 12, sp: 44, dmg: 8, r: 13, xp: 1, col: 0x7ad65a },
+  bat: { name: "Летучая мышь", hp: 7, sp: 92, dmg: 5, r: 10, xp: 1, col: 0xa877e8 },
   imp: { name: "Бесёнок", hp: 16, sp: 46, dmg: 6, r: 12, xp: 2, col: 0xf05a5a, ranged: true },
+  boar: { name: "Кабан", hp: 34, sp: 48, dmg: 14, r: 15, xp: 3, col: 0x9a6a44, charger: true, heavy: 0.6 },
   ghost: { name: "Призрак", hp: 26, sp: 62, dmg: 10, r: 14, xp: 3, col: 0xcfe6ff },
   brute: { name: "Голем", hp: 60, sp: 30, dmg: 15, r: 21, xp: 5, col: 0xb98048, heavy: 0.35 },
   boss1: { name: "Каменный великан", hp: 1400, sp: 40, dmg: 25, r: 46, xp: 60, col: 0x9a7650, boss: true, heavy: 0.05 },
@@ -214,13 +215,13 @@ const FOES = {
 // Кого и сколько присылать по минутам
 const WAVES = [
   { slime: 1 },
-  { slime: 3, bat: 2 },
-  { slime: 2, bat: 2, imp: 1 },
+  { slime: 3, bat: 2, boar: 0.6, imp: 0.5 },
+  { slime: 2, bat: 2, imp: 1, boar: 1 },
   { slime: 2, bat: 2, imp: 1, brute: 0.5 },
   { slime: 1, bat: 2, imp: 1, ghost: 1, brute: 0.6 },
-  { bat: 2, imp: 1, ghost: 2, brute: 1 },
+  { bat: 2, imp: 1, ghost: 2, brute: 1, boar: 1 },
   { slime: 2, bat: 2, ghost: 2, brute: 1, imp: 1 },
-  { bat: 3, ghost: 2, brute: 1.5, imp: 1 },
+  { bat: 3, ghost: 2, brute: 1.5, imp: 1, boar: 1.5 },
   { slime: 2, bat: 2, ghost: 2, brute: 2, imp: 1.5 },
   { bat: 2, ghost: 3, brute: 2, imp: 2 },
 ];
@@ -312,6 +313,7 @@ function makeTextures(sc) {
   tex(sc, "f_bat", 40, 30, 20, 15, x => { shadowE(x, 12, 8, 3); for (const s of [-1, 1]) body(x, 0x6a48a8, () => { x.beginPath(); x.moveTo(s * 5, -2); x.lineTo(s * 19, -9); x.lineTo(s * 15, -2); x.lineTo(s * 18, 3); x.lineTo(s * 11, 1); x.lineTo(s * 9, 6); x.closePath(); }); body(x, FOES.bat.col, () => { x.beginPath(); x.arc(0, 0, 8, 0, 7); }); x.fillStyle = css(FOES.bat.col); x.beginPath(); x.moveTo(-6, -5); x.lineTo(-4, -12); x.lineTo(-1, -6); x.moveTo(6, -5); x.lineTo(4, -12); x.lineTo(1, -6); x.fill(); eyes(x, 3, -1, 2.3, true); });
   tex(sc, "f_imp", 34, 38, 17, 20, x => { shadowE(x, 12, 10, 3.5); for (const s of [-1, 1]) body(x, 0xf2e0b0, () => { x.beginPath(); x.moveTo(s * 5, -9); x.quadraticCurveTo(s * 12, -14, s * 11, -19); x.quadraticCurveTo(s * 8, -12, s * 2, -11); x.closePath(); }); body(x, FOES.imp.col, () => { x.beginPath(); x.arc(0, 0, 11, 0, 7); }); shine(x, -5, -5, 3.5, 2); eyes(x, 4, -1, 2.6, true); x.strokeStyle = "#3a1010"; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 4, 3.5, 0.2, Math.PI - 0.2); x.stroke(); });
   tex(sc, "f_ghost", 36, 40, 18, 19, x => { shadowE(x, 15, 10, 3); x.globalAlpha = .92; body(x, FOES.ghost.col, () => { x.beginPath(); x.moveTo(-13, 12); x.lineTo(-13, -2); x.arc(0, -2, 13, Math.PI, 0); x.lineTo(13, 12); for (let i = 0; i < 4; i++) { x.quadraticCurveTo(13 - i * 6.5 - 3.2, 7, 13 - (i + 1) * 6.5, 12); } x.closePath(); }); x.globalAlpha = 1; x.fillStyle = "#2a3048"; x.beginPath(); x.ellipse(-5, -3, 3, 4, 0, 0, 7); x.ellipse(5, -3, 3, 4, 0, 0, 7); x.fill(); x.beginPath(); x.ellipse(0, 5, 2.5, 3, 0, 0, 7); x.fill(); });
+  tex(sc, "f_boar", 44, 36, 22, 18, x => { shadowE(x, 13, 16, 4); body(x, FOES.boar.col, () => { x.beginPath(); x.ellipse(-2, 0, 17, 12, 0, 0, 7); }); x.fillStyle = "#6a4426"; x.beginPath(); x.moveTo(-14, -8); x.lineTo(-8, -15); x.lineTo(-2, -9); x.fill(); body(x, 0xd89a78, () => { x.beginPath(); x.ellipse(13, 3, 6, 5, 0, 0, 7); }); x.fillStyle = "#5a2a1a"; x.beginPath(); x.arc(12, 3, 1.2, 0, 7); x.arc(15, 3, 1.2, 0, 7); x.fill(); x.fillStyle = "#fff6e0"; x.beginPath(); x.moveTo(9, 7); x.lineTo(7, 13); x.lineTo(11, 8); x.fill(); eyes(x, 4, -3, 2.4, true); x.translate(4, 0); });
   tex(sc, "f_brute", 50, 52, 25, 26, x => { shadowE(x, 20, 19, 5); body(x, FOES.brute.col, () => { x.beginPath(); x.roundRect(-19, -19, 38, 38, 9); }); x.strokeStyle = shade(FOES.brute.col, -0.45); x.lineWidth = 1.6; x.beginPath(); x.moveTo(-12, 8); x.lineTo(-6, 12); x.lineTo(-8, 17); x.moveTo(10, -14); x.lineTo(6, -9); x.stroke(); x.fillStyle = "#6fa04a"; x.beginPath(); x.ellipse(-8, -18, 9, 3.5, 0, 0, 7); x.fill(); eyes(x, 6.5, -3, 3.4, true); x.fillStyle = "#3a2410"; x.fillRect(-7, 7, 14, 3); });
   tex(sc, "f_boss1", 110, 110, 55, 54, x => { shadowE(x, 44, 42, 10); body(x, FOES.boss1.col, () => { x.beginPath(); x.roundRect(-42, -40, 84, 82, 20); }); for (const s of [-1, 1]) body(x, 0x8a6644, () => { x.beginPath(); x.arc(s * 46, 6, 15, 0, 7); }); x.fillStyle = "#6fa04a"; x.beginPath(); x.ellipse(-12, -40, 22, 7, 0, 0, 7); x.ellipse(16, -38, 14, 5, 0, 0, 7); x.fill(); x.strokeStyle = shade(FOES.boss1.col, -0.5); x.lineWidth = 2.5; x.beginPath(); x.moveTo(-28, 16); x.lineTo(-16, 24); x.lineTo(-20, 34); x.moveTo(22, -24); x.lineTo(14, -14); x.lineTo(20, -6); x.stroke(); x.fillStyle = "#ffcf3a"; x.shadowColor = "#ffb000"; x.shadowBlur = 8; x.beginPath(); x.ellipse(-14, -10, 6, 5, 0, 0, 7); x.ellipse(14, -10, 6, 5, 0, 0, 7); x.fill(); x.shadowBlur = 0; x.fillStyle = "#2a1a0a"; x.fillRect(-16, 12, 32, 6); });
   tex(sc, "f_boss2", 130, 130, 65, 62, x => { shadowE(x, 56, 46, 11); body(x, 0x3a2068, () => { x.beginPath(); x.moveTo(-50, 50); x.quadraticCurveTo(-56, -10, -30, -30); x.lineTo(30, -30); x.quadraticCurveTo(56, -10, 50, 50); x.quadraticCurveTo(0, 40, -50, 50); }); body(x, FOES.boss2.col, () => { x.beginPath(); x.arc(0, -16, 30, 0, 7); }); x.fillStyle = "#ffd23a"; x.strokeStyle = "#6a4a00"; x.lineWidth = 2; x.beginPath(); x.moveTo(-24, -38); x.lineTo(-24, -58); x.lineTo(-12, -46); x.lineTo(0, -64); x.lineTo(12, -46); x.lineTo(24, -58); x.lineTo(24, -38); x.closePath(); x.fill(); x.stroke(); x.fillStyle = "#ff3a6a"; x.shadowColor = "#ff2a5a"; x.shadowBlur = 10; x.beginPath(); x.ellipse(-11, -16, 7, 5, 0.3, 0, 7); x.ellipse(11, -16, 7, 5, -0.3, 0, 7); x.fill(); x.shadowBlur = 0; });
@@ -408,8 +410,9 @@ class Run extends Phaser.Scene {
   update(_, ms) {
     const dt = Math.min(0.05, ms / 1000);
     if (R && !R.paused && !R.over) { if (R.stop > 0) R.stop -= dt; else tick(dt * (R.slowmo || 1)); }
-    if (R) { tickNumbers(dt); drawPlayerHud(); }
-    const v = CAM.worldView; this.ground.setPosition(Math.floor(v.x / 256) * 256 - 512, Math.floor(v.y / 256) * 256 - 512);
+    if (R) { tickNumbers(dt); drawPlayerHud(); const k = 1 - Math.exp(-dt * 9); R.cx += (R.x - R.cx) * k; R.cy += (R.y - R.cy) * k; CAM.centerOn(R.cx, R.cy); }
+    const cx = R ? R.cx : 0, cy = R ? R.cy : 0, vw = CAM.width / CAM.zoom, vh = CAM.height / CAM.zoom;
+    this.ground.setPosition(Math.floor((cx - vw / 2) / 256) * 256 - 512, Math.floor((cy - vh / 2) / 256) * 256 - 512);
     uiFrame(dt);
   }
 }
@@ -430,7 +433,7 @@ function newRun(start) {
     elems: { [start]: 1 }, fus: {}, pass: {}, cd: {}, foes: [], shots: [], ebul: [], gems: [], fx: [], blades: [],
     paused: false, over: false, pend: 0, rerolls: m.reroll || 0, revived: false, ev: 0, spawnAcc: 0, boss: null, stop: 0, hurtT: 0, gemCombo: 0, gemT: 0, windA: 0, aura: null, clouds: null };
   R.spr = img("mage", 0, 0); R.orb = glow(0, 0, ELEM[start].col, 22);
-  CAM.startFollow(R.spr, false, 0.14, 0.14); CAM.centerOn(0, 0);
+  R.cx = 0; R.cy = 0; CAM.centerOn(0, 0);
   for (let i = 0; i < 8; i++) spawnFoe("slime", ...ringPos(1.05));
   yaGameplay(true);
 }
@@ -498,6 +501,12 @@ function updateFoes(dt) {
       if (d < 210) { vx = -dy * 0.8 - dx * 0.3; vy = dx * 0.8 - dy * 0.3; }
       e.shootT -= dt * sm; if (e.shootT <= 0 && d < 340) { e.shootT = rnd(2.4, 3.2); enemyShot(e.x, e.y, dx, dy); }
     }
+    if (e.d.charger) {
+      e.cT = (e.cT ?? rnd(1, 3)) - dt * sm;
+      if (e.st === "wind") { vx = vy = 0; if (e.cT <= 0) { e.st = "dash"; e.cT = 0.5; } }
+      else if (e.st === "dash") { vx = e.dx * 6.5; vy = e.dy * 6.5; if (Math.random() < 0.5) burst(e.x, e.y + e.r, 0xc8a070, 1); if (e.cT <= 0) { e.st = ""; e.cT = rnd(2.2, 3.2); } }
+      else if (e.cT <= 0 && d < 280) { e.st = "wind"; e.cT = 0.6; e.dx = dx; e.dy = dy; }
+    }
     if (e.d.boss) { e.shootT -= dt; if (e.shootT <= 0) { e.shootT = e.type === "boss2" ? 2.2 : 3.2; for (let k = 0; k < (e.type === "boss2" ? 14 : 9); k++) { const a = k / (e.type === "boss2" ? 14 : 9) * Math.PI * 2 + t; enemyShot(e.x, e.y, Math.cos(a), Math.sin(a)); } } }
     e.x += (vx * e.sp * sm + e.kx) * dt; e.y += (vy * e.sp * sm + e.ky) * dt;
     const kd = Math.exp(-dt * 9); e.kx *= kd; e.ky *= kd;
@@ -519,7 +528,7 @@ function updateFoes(dt) {
     const w = Math.sin(t * (e.type === "bat" ? 22 : 9) + e.seed);
     if (e.type === "bat") s.setScale(e.base * (1 + w * 0.18), e.base); else s.setScale(e.base * (1 + w * 0.05), e.base * (1 - w * 0.06));
     s.setFlipX(R.x < e.x);
-    if (e.flash > 0) { e.flash -= 1 / 60; s.setTintFill(0xffffff); } else if (e.frzT > 0) s.setTint(0x88e8ff); else if (e.slowT > 0) s.setTint(0xc0f0ff); else s.clearTint();
+    if (e.st === "wind") { s.setTint(0xff7a7a); s.x += Math.sin(t * 60) * 1.5; } else if (e.flash > 0) { e.flash -= 1 / 60; s.setTintFill(0xffffff); } else if (e.frzT > 0) s.setTint(0x88e8ff); else if (e.slowT > 0) s.setTint(0xc0f0ff); else s.clearTint();
     if (e.halo) e.halo.setPosition(e.x, e.y).setDepth(e.y - 1);
   }
   R.foes = R.foes.filter(e => !e.dead);
@@ -551,14 +560,13 @@ function updatePlayer(dt) {
   R.orb.setPosition(R.x + 15 * R.face, R.y - 12 + b * 1.5).setDepth(R.y + 5).setScale((24 + Math.sin(R.t * 8) * 4) / 64 / K);
   if (R.hurtT > 0) { R.hurtT -= dt; R.spr.setTint(Math.floor(R.hurtT * 30) % 2 ? 0xff7a7a : 0xffffff); } else R.spr.clearTint();
   // контакт с врагами
-  let dmg = 0; near(R.x, R.y, PR, e => { if (e.frzT <= 0) dmg += e.dmg; });
-  if (dmg) damagePlayer(Math.min(dmg * 0.9, 40) * dt, true);
+  near(R.x, R.y, PR, e => { if (e.frzT > 0 || (e.hitT || 0) > R.t) return; e.hitT = R.t + 1.0; damagePlayer(e.dmg); });
   if (R.pass.heart) R.hp = Math.min(R.maxhp, R.hp + R.pass.heart * 0.25 * dt);
 }
 function damagePlayer(v, cont) {
   if (R.over) return;
   R.hp -= v;
-  if (R.hurtT <= 0) { R.hurtT = 0.35; snd("hurt", 0.25); CAM.shake(120, 0.004); hurtFlash(); }
+  if (R.hurtT <= 0) { R.hurtT = 0.35; snd("hurt", 0.25); CAM.shake(90, 0.003); hurtFlash(); }
   if (R.hp <= 0) { R.hp = 0; die(); }
 }
 function drawPlayerHud() {
@@ -648,7 +656,6 @@ function explode(x, y, rad, dmg, col, kb, freeze) {
   const r = img("ring", x, y, 1.26e6).setTint(col).setBlendMode(ADD()); sizeTo(r, rad * 0.6); const s1 = rad * 2.1 / 128 / K;
   SC.tweens.add({ targets: r, scale: s1, alpha: 0, duration: 280, ease: "Cubic.out", onComplete: () => r.destroy() });
   burst(x, y, col, Math.min(26, 6 + rad / 4 | 0)); snd("boom", 0.06);
-  if (rad > 60) CAM.shake(110, 0.003);
 }
 
 // ---------- слияния
@@ -693,7 +700,7 @@ const FUSE_CAST = {
       o.step = dt => {
         o.t -= dt; const k = Math.max(0, o.t / 0.55);
         o.rock.setPosition(tx + 160 * k, ty - 420 * k); burst(o.rock.x, o.rock.y, 0xff4a1a, 1); o.mark.setAlpha(0.35 + Math.sin(R.t * 30) * 0.3);
-        if (o.t <= 0) { explode(tx, ty, area(70), 55, 0xff5a2a, 220); CAM.shake(140, 0.005); crater(tx, ty); return false; }
+        if (o.t <= 0) { explode(tx, ty, area(70), 55, 0xff5a2a, 220); CAM.shake(70, 0.002); crater(tx, ty); return false; }
         return true;
       };
       R.fx.push(o);
