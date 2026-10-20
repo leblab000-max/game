@@ -60,6 +60,7 @@ function uiFrame(dt) {
   if (screen !== "game" || !R) return;
   $("hXp").style.width = (R.xp / R.need * 100).toFixed(1) + "%";
   $("hHp").style.width = Math.max(0, R.hp / R.maxhp * 100).toFixed(1) + "%";
+  $("low").classList.toggle("on", R.inWave && !R.over && R.hp / R.maxhp < 0.3);
   hudT -= dt; if (hudT > 0) return; hudT = 0.1;
   $("hLvl").textContent = "Ур. " + R.lvl; $("hLv").textContent = R.pend ? `+${R.pend} ур.` : "";
   $("hWave").textContent = `Волна ${R.wave}/${WAVES_TOTAL}`; $("hTime").textContent = Math.max(0, Math.ceil(R.waveT));
@@ -72,6 +73,10 @@ let banT = 0;
 function banner(t) { const b = $("banner"); b.textContent = t; b.classList.add("on"); clearTimeout(banT); banT = setTimeout(() => b.classList.remove("on"), 2000); }
 let hurtTm = 0;
 function hurtFlash() { const h = $("hurt"); h.classList.add("on"); clearTimeout(hurtTm); hurtTm = setTimeout(() => h.classList.remove("on"), 60); }
+let hintT = 0;
+function hint(t, sec) { const el = $("hint"); el.textContent = t; el.hidden = false; el.style.animation = "none"; el.offsetHeight; el.style.animation = ""; clearTimeout(hintT); hintT = setTimeout(() => el.hidden = true, sec * 1000); }
+let popT = 0;
+function gemPop() { const el = $("hGems"); if (popT > performance.now()) return; popT = performance.now() + 250; el.classList.remove("pop"); el.offsetWidth; el.classList.add("pop"); }
 let toastT = 0;
 function toast(t) { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2400); }
 
@@ -107,6 +112,10 @@ function genOffers() { const w = R.wave + 1, items = Object.keys(ITEMS); SH.offe
 function openShop() {
   screen = "shop"; music("calm"); $("hud").hidden = true; $("shop").hidden = false; $("shop").scrollTop = 0;
   SH.roll = 0; SH.sel = null; SH.pot = []; genOffers(); renderShop();
+  $("low").classList.remove("on"); $("hint").hidden = true;
+  const tips = ["⚗️ Котёл — главное. Положи два одинаковых оружия, и выйдет ранг выше. Оружие без стихии плюс стихия дают новое оружие, например огненные кинжалы.", "🎲 Ничего не нравится? Перебрось товары. Ненужное оружие можно продать: нажми на него."];
+  const tip = !P.tut ? tips[Math.min(R.wave - 1, 1)] : ""; $("shHint").hidden = !tip; $("shHint").textContent = tip;
+  if (R.wave >= 2 && !P.tut) { P.tut = 1; saveP(); }
 }
 function rollCost() { return R.freeRolls > 0 && SH.roll === 0 ? 0 : 2 + R.wave + SH.roll * 2; }
 function canBuyW(o) { if (R.weap.length < MAX_WEAP) return true; return R.weap.some(w => w.id === o.id && w.tier === o.tier && w.tier < 3); }

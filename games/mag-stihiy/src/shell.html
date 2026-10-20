@@ -117,12 +117,19 @@ h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);text-transf
 .build{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}
 .big{font-size:40px;font-weight:800;color:var(--gold);text-shadow:0 3px 0 #3a1a00;margin:4px 0}
 .rows{font-size:15px;color:var(--sub);line-height:1.8}.rows b{color:#fff}
+#hint{position:absolute;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92%,420px);background:linear-gradient(180deg,#3a2a80,#241a4a);border:3px solid var(--gold);padding:12px 14px;border-radius:16px;font-weight:700;font-size:15px;line-height:1.35;text-align:center;z-index:6;box-shadow:0 6px 0 var(--line),0 0 24px rgba(255,210,58,.35);pointer-events:none;animation:cin .35s both}
+#shHint{margin:0 0 10px;padding:10px 12px;border-radius:14px;border:3px solid var(--gold);background:#3a2a80;font-size:14px;line-height:1.4;text-align:left}
+#hGems.pop{animation:pop .25s}
+@keyframes pop{50%{transform:scale(1.25)}}
+#low{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(200,0,30,.5) 100%)}
+#low.on{animation:beat 1s infinite}
+@keyframes beat{0%,100%{opacity:.15}15%{opacity:.8}30%{opacity:.25}45%{opacity:.6}}
 #toast{position:absolute;left:50%;bottom:calc(70px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--line);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;z-index:9;max-width:90%;text-align:center}
 @media (prefers-reduced-motion:reduce){.card{animation:none}#banner{transition:none}}
 </style>
 <div class="app">
   <div id="stage"></div>
-  <div id="vign"></div><div id="hurt"></div>
+  <div id="vign"></div><div id="low"></div><div id="hurt"></div>
   <div id="touch"></div>
   <div id="joy"><div id="knob"></div></div>
   <div id="hud" hidden>
@@ -156,6 +163,7 @@ h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);text-transf
     <div class="wrap">
       <div class="shophead"><h1>Лавка алхимика</h1><span class="gems" id="shGems">💎 0</span></div>
       <div class="sub" style="text-align:left;margin:2px 0 8px" id="shSub"></div>
+      <div id="shHint" hidden></div>
       <div class="offers" id="shOffers"></div>
       <button class="btn small" id="shRoll">🎲 Перебросить</button>
       <h2 id="shInvT">Оружие</h2>
@@ -175,4 +183,5 @@ h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--sub);text-transf
   <div id="revive" class="modal" hidden><div class="box"><h1>Ты пал!</h1><p class="sub">Орда почти победила. Но магия ещё теплится…</p><button class="btn green" id="rAd">▶ Воскреснуть<small>за просмотр ролика</small></button><button class="btn" id="rNo">Завершить забег</button></div></div>
   <div id="end" class="modal" hidden><div class="box" id="endBox"></div></div>
   <div id="toast" hidden></div>
+  <div id="hint" hidden></div>
 </div>

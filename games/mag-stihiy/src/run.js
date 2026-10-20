@@ -87,7 +87,7 @@ class Run extends Phaser.Scene {
   }
   update(_, ms) {
     const dt = Math.min(0.05, ms / 1000);
-    if (R && !R.paused && !R.over) { if (R.stop > 0) R.stop -= dt; else tick(dt); }
+    if (R && !R.paused && !R.over) { if (R.stop > 0) R.stop -= dt; else { if (R.slowT > 0) R.slowT -= dt; tick(R.slowT > 0 ? dt * 0.3 : dt); } }
     if (R) { tickNumbers(dt); drawPlayerHud(); const k = 1 - Math.exp(-dt * 9); R.cx += (R.x - R.cx) * k; R.cy += (R.y - R.cy) * k; CAM.centerOn(R.cx, R.cy); }
     uiFrame(dt);
   }
@@ -155,7 +155,8 @@ function removeWeapon(i) { const w = R.weap[i]; dropWeaponFx(w); R.weap.splice(i
 function startWave(w) {
   R.wave = w; R.waveT = waveTime(w); R.ev = 0; R.inWave = true; R.spawnAcc = 0; R.hp = R.maxhp;
   for (const x of R.weap) x.cd = rnd(0.1, 0.5);
-  banner(w === WAVES_TOTAL ? "Последняя волна!" : "Волна " + w); snd("wave", 0.5);
+  banner(w === WAVES_TOTAL ? "Последняя волна!" : "Волна " + w);
+  if (w === 1 && !P.tut) hint("Веди пальцем по экрану — маг побежит. Колдует он сам", 6); snd("wave", 0.5);
   for (let i = 0; i < 4 + w; i++) queueSpawn(pickFoe());
   yaGameplay(true);
 }
@@ -215,7 +216,7 @@ function wMul(d) {
 function hurtFoe(e, dmg, col, kx = 0, ky = 0, noNum, elem, tier) {
   if (e.dead) return;
   const crit = Math.random() < R.st.crit; dmg = Math.max(1, Math.round(dmg * MUL * R.st.dmg * rnd(0.9, 1.1) * (crit ? 2 : 1)));
-  e.hp -= dmg; e.flash = 0.08; e.kx += kx * e.kb; e.ky += ky * e.kb;
+  e.hp -= dmg; e.flash = 0.08; e.sq = 0.14; e.kx += kx * e.kb; e.ky += ky * e.kb;
   if (!noNum && (crit || e.d.boss || e.elite || Math.random() < 0.35)) number(e.x, e.y - e.r - 6, dmg, crit);
   snd("hit", 0.04);
   if (elem) elemHit(e, elem, tier || 0, dmg);
@@ -232,13 +233,14 @@ function elemHit(e, el, t, dmg) {
 function killFoe(e, col) {
   e.dead = true; R.kills++; P.kills = (P.kills || 0) + 1;
   burst(e.x, e.y, e.d.col, e.d.boss ? 40 : e.elite ? 22 : 7); if (col) burst(e.x, e.y, col, 4);
-  const s = e.spr; SC.tweens.add({ targets: s, scaleX: e.base * 1.5, scaleY: e.base * 0.4, alpha: 0, duration: 160, onComplete: () => s.destroy() });
+  const s = e.spr, kl = Math.hypot(e.kx, e.ky) || 1, fx = e.kx / kl * Math.min(60, 20 + kl * 0.15), fy = e.ky / kl * Math.min(60, 20 + kl * 0.15);
+  s.setTintFill(0xffffff); SC.tweens.add({ targets: s, x: s.x + fx, y: s.y + fy - 10, angle: (fx >= 0 ? 1 : -1) * rnd(120, 260), scaleX: e.base * 0.6, scaleY: e.base * 0.6, alpha: 0, duration: 280, ease: "Quad.out", onComplete: () => s.destroy() });
   if (e.halo) { const h = e.halo; SC.tweens.add({ targets: h, alpha: 0, duration: 300, onComplete: () => h.destroy() }); }
   snd("kill", 0.03);
   const v = e.cr; dropGem(e.x, e.y, v >= 10 ? "gem3" : v >= 2 ? "gem2" : "gem1", v);
   if (e.elite || e.d.boss) { drop(e.x + 14, e.y, "chest"); R.stop = 0.09; CAM.shake(260, 0.006); }
   else if (Math.random() < 0.012) drop(e.x, e.y, "meat");
-  if (e.d.boss) { R.boss = null; bossBar(null); for (let i = 0; i < 10; i++) dropGem(e.x + rnd(-60, 60), e.y + rnd(-60, 60), "gem3", 10); banner(e.d.name + " повержен!"); }
+  if (e.d.boss) { R.slowT = 0.9; CAM.flash(400, 255, 230, 180); R.boss = null; bossBar(null); for (let i = 0; i < 10; i++) dropGem(e.x + rnd(-60, 60), e.y + rnd(-60, 60), "gem3", 10); banner(e.d.name + " повержен!"); }
 }
 function updateFoes(dt) {
   const t = R.t;
@@ -274,7 +276,8 @@ function updateFoes(dt) {
     if (e.dead) continue; const s = e.spr;
     s.setPosition(e.x, e.y).setDepth(e.y);
     const w = Math.sin(t * (e.type === "bat" ? 22 : 9) + e.seed);
-    if (e.type === "bat") s.setScale(e.base * (1 + w * 0.18), e.base); else s.setScale(e.base * (1 + w * 0.05), e.base * (1 - w * 0.06));
+    const q = e.sq > 0 ? (e.sq -= 1 / 60, e.sq / 0.14) : 0;
+    if (e.type === "bat") s.setScale(e.base * (1 + w * 0.18 + q * 0.25), e.base * (1 - q * 0.2)); else s.setScale(e.base * (1 + w * 0.05 + q * 0.28), e.base * (1 - w * 0.06 - q * 0.22));
     s.setFlipX(R.x < e.x);
     if (e.st === "wind") { s.setTint(0xff7a7a); s.x += Math.sin(t * 60) * 1.5; }
     else if (e.flash > 0) { e.flash -= 1 / 60; s.setTintFill(0xffffff); }
@@ -530,6 +533,8 @@ function updateGems(dt) {
 }
 function collect(g, quiet) {
   if (g.v) {
+    if (!P.tut && !R.tGem) { R.tGem = 1; hint("💎 Кристаллы — это опыт и деньги для лавки", 4); }
+    gemPop();
     R.xp += g.v; R.cr += g.v * 1.7 / (1 + R.wave * 0.08) * R.st.gain; R.earned += g.v;
     if (!quiet) { R.gemCombo = Math.min(9, R.gemCombo + 1); R.gemT = 0.35; sfx(GEM_SND[R.gemCombo]); }
     while (R.xp >= R.need) { R.xp -= R.need; R.lvl++; R.need = xpNeed(R.lvl); R.pend++; if (!quiet) { burst(R.x, R.y, 0xffe45c, 18); snd("lvl", 0.2); number(R.x, R.y - 34, "Уровень!", false, "#ffe45c"); } }
