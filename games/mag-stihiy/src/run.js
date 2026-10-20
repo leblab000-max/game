@@ -382,6 +382,58 @@ const CAST = {
     for (let i = 0; i < d.n[t]; i++) shoot("missile", hx, hy, -Math.PI / 2 + rnd(-1, 1), 250, { dmg: d.dmg[t], pierce: 1, life: 3, r: 7, col, elem: d.elem, tier: t });
     snd("fire", 0.08);
   },
+  arrow(w, d, t, dt) {
+    if (!ready(w, d.cd[t], dt)) return; const ts = targets(d.n[t], 520); if (!ts.length) { w.cd = 0.1; return; }
+    const col = d.elem ? ELEM[d.elem].col : 0xf4e0b0;
+    for (const e of ts) shoot("dagger", R.x, R.y - 6, Math.atan2(e.y - R.y, e.x - R.x), 720, { dmg: d.dmg[t], pierce: d.pierce[t], life: 0.9, r: 6, col, elem: d.elem, tier: t, arrow: 1 });
+    snd("throw", 0.05);
+  },
+  boomer(w, d, t, dt) {
+    if (!ready(w, d.cd[t], dt)) return; const ts = targets(d.n[t], 360); if (!ts.length) { w.cd = 0.1; return; }
+    const col = d.elem ? ELEM[d.elem].col : 0xd8a060;
+    for (const e of ts) shoot("boomer", R.x, R.y - 6, Math.atan2(e.y - R.y, e.x - R.x), 480, { dmg: d.dmg[t], pierce: 999, life: 3, r: 10, col, elem: d.elem, tier: t, age: 0 });
+    snd("swing", 0.08);
+  },
+  totem(w, d, t, dt) {
+    if (!ready(w, d.cd[t], dt)) return; if (!R.foes.length) { w.cd = 0.3; return; }
+    const col = d.elem ? ELEM[d.elem].col : 0xc8a8ff, o = { x: R.x, y: R.y + 6, life: d.life[t], cd: 0.3 };
+    o.spr = img("totem", o.x, o.y, o.y); o.g = glow(o.x, o.y - 16, col, 30, o.y + 1);
+    o.kill = () => { burst(o.x, o.y, col, 8); o.spr.destroy(); o.g.destroy(); };
+    o.step = dt => {
+      o.life -= dt; o.cd -= dt; o.g.setScale((26 + Math.sin(R.t * 8) * 4) / 64 / K);
+      if (o.cd <= 0) { const e = nearest(o.x, o.y, 300); if (e) { o.cd = 0.55 / R.st.atk; shoot("dagger", o.x, o.y - 16, Math.atan2(e.y - o.y + 16, e.x - o.x), 520, { dmg: d.dmg[t], pierce: 1, life: 0.7, r: 6, col, elem: d.elem, tier: t }); } else o.cd = 0.15; }
+      return o.life > 0;
+    };
+    o.mul = MUL; R.fx.push(o); burst(o.x, o.y, col, 10);
+  },
+  whip(w, d, t, dt) {
+    if (!ready(w, d.cd[t], dt)) return; const len = area(d.len[t]), col = d.elem ? ELEM[d.elem].col : 0xf0d8b0, y0 = R.y - 6;
+    const sides = d.n[t] > 1 ? [1, -1] : [R.face];
+    for (const s of sides) {
+      near(R.x + s * len / 2, y0, len / 2, e => { if ((e.x - R.x) * s > 0 && Math.abs(e.y - y0) < 26 + e.r) hurtFoe(e, d.dmg[t], col, s * 220, 0, false, d.elem, t); });
+      const c = new Phaser.Curves.QuadraticBezier(new Phaser.Math.Vector2(R.x, y0 - 2), new Phaser.Math.Vector2(R.x + s * len * 0.5, y0 - 34), new Phaser.Math.Vector2(R.x + s * len, y0 + 2));
+      const g = SC.add.graphics().setDepth(1.2e6).setBlendMode(ADD()); g.lineStyle(8, col, 0.45).strokePoints(c.getPoints(16)); g.lineStyle(3, 0xffffff, 1).strokePoints(c.getPoints(16));
+      SC.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() }); burst(R.x + s * len, y0, col, 4);
+    }
+    snd("swing", 0.08);
+  },
+  bomb(w, d, t, dt) {
+    if (!ready(w, d.cd[t], dt)) return; const c = R.foes.filter(e => !e.dead && Math.hypot(e.x - R.x, e.y - R.y) < 380); if (!c.length) { w.cd = 0.2; return; }
+    const col = d.elem ? ELEM[d.elem].col : 0xffa040;
+    for (let i = 0; i < d.n[t]; i++) {
+      const e = pick(c), [sx, sy] = hand(), tx = e.x, ty = e.y, o = { k: 0 };
+      o.spr = img("dot", sx, sy, 1.3e6).setTint(0x2a2440).setScale(14 / 16 / K); o.g = glow(sx, sy, col, 18, 1.31e6);
+      o.kill = () => { o.spr.destroy(); o.g.destroy(); };
+      o.step = dt => {
+        o.k += dt / 0.55; const k = Math.min(1, o.k), x = sx + (tx - sx) * k, y = sy + (ty - sy) * k - Math.sin(Math.PI * k) * 90;
+        o.spr.setPosition(x, y).setRotation(k * 8); o.g.setPosition(x - 4, y - 6).setAlpha(0.5 + Math.sin(R.t * 40) * 0.5);
+        if (k >= 1) { explode(tx, ty, area(d.boom[t]), d.dmg[t], col, 220, 0, d.elem); return false; }
+        return true;
+      };
+      o.mul = MUL; R.fx.push(o);
+    }
+    snd("throw", 0.1);
+  },
   fusion(w, d, t, dt) { FUSE_CAST[w.id](w, t, dt); },
 };
 function chain(first, sx, sy, n, dmg, jump, col, freeze) {
@@ -402,8 +454,9 @@ function zap(x1, y1, x2, y2, col) {
 function shoot(kind, x, y, a, sp, o) {
   let s;
   if (kind === "fire" || kind === "missile") s = glow(x, y, o.col, 30, 1.2e6);
+  else if (kind === "boomer") s = img("blade", x, y, 1.2e6).setTint(o.col).setScale(0.75 / K);
   else s = img("shard", x, y, 1.2e6).setTint(o.col).setRotation(a);
-  if (kind === "dagger") s.setScale(0.75 / K, 0.6 / K);
+  if (kind === "dagger") s.setScale(o.arrow ? 1.15 / K : 0.75 / K, o.arrow ? 0.4 / K : 0.6 / K);
   R.shots.push(Object.assign({ kind, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, sp, spr: s, hit: new Set(), mul: MUL }, o));
 }
 function updateShots(dt) {
@@ -412,6 +465,12 @@ function updateShots(dt) {
       if (!p.tgt || p.tgt.dead) p.tgt = nearest(p.x, p.y, 500);
       if (p.tgt) { const want = Math.atan2(p.tgt.y - p.y, p.tgt.x - p.x), cur = Math.atan2(p.vy, p.vx); let da = Math.atan2(Math.sin(want - cur), Math.cos(want - cur)); const na = cur + Math.max(-6 * dt, Math.min(6 * dt, da)); p.sp = Math.min(520, p.sp + 300 * dt); p.vx = Math.cos(na) * p.sp; p.vy = Math.sin(na) * p.sp; }
       if (Math.random() < dt * 30) burst(p.x, p.y, p.col, 1);
+    }
+    if (p.kind === "boomer") {
+      p.age += dt; p.spr.rotation += dt * 22;
+      if (!p.back && p.age > 0.45) { p.back = true; p.hit.clear(); }
+      if (p.back) { const dx = R.x - p.x, dy = R.y - 6 - p.y, dd = Math.hypot(dx, dy) || 1; p.vx = dx / dd * 520; p.vy = dy / dd * 520; if (dd < 18) p.life = 0; }
+      else { p.vx *= 1 - dt * 2.2; p.vy *= 1 - dt * 2.2; }
     }
     p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; p.spr.setPosition(p.x, p.y);
     if (p.kind === "fire") { p.spr.setScale((28 + Math.sin(R.t * 30) * 4) / 64 / K); if (Math.random() < dt * 40) burst(p.x, p.y, 0xff5a1a, 1); }
